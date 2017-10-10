@@ -23,6 +23,7 @@
   "license": "MIT",
   "dependencies": {
     "choo": "^6.4.1",
-    "choo-log": "^7.2.1"
+    "choo-log": "^7.2.1",
+    "choo-persist": "^3.0.2"
   }
 }
