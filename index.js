@@ -12,7 +12,7 @@ var app = choo()
 app.use(log())
 app.use(persist({name: 'ffs-monitor-' + require('./package.json').version}))
 app.use(nodeStore)
-app.route('/', mainView)
+app.route(window.location.pathname, mainView)
 app.mount('body')
 
 app.use((state, emitter) => {
