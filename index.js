@@ -29,7 +29,7 @@ function mainView (state, emit) {
   return html`
     <body>
       <header>
-        Add a node: <input type=text> <button onclick=${add}>add</button>
+        Add a node: <input type=text placeholder='mac address'> <button onclick=${add}>add</button>
       </header>
       <section>
         <ol>
