@@ -41,7 +41,11 @@ function mainView (state, emit) {
             >
               <b>node name</b> (${id}),
               ${node.isonline ? 'online' : 'offline'},
-              <button onclick=${remove.bind(null, i)} class='close float-right' type=button>×</button>
+              <button
+                onclick=${remove.bind(null, i)}
+                class='close float-right'
+                style='margin-top: -2px;'
+                type=button>×</button>
             </li>`
           })}
         </ol>
