@@ -2,11 +2,18 @@
   "name": "ffs-monitor",
   "version": "1.0.0",
   "description": "Monitor your freifunk devices.",
+  "author": "Per Guth <mail@perguth.de>",
+  "license": "MIT",
+  "keywords": [
+    "freifunk",
+    "stuttgart",
+    "monitoring"
+  ],
   "main": "index.js",
   "scripts": {
     "test": "standard",
-    "start": "budo --live --cors --host localhost index.js:bundle.js",
-    "build": "mkdir -p build && browserify index.js -o build/bundle.js -t [babelify --presets [es2015]] && cp -r index.html build/"
+    "start": "budo --live --host localhost index.js:bundle.js",
+    "build": "mkdir -p build && browserify index.js -o build/bundle.js -t [babelify --presets [es2015]] && cp -r index.html node_modules build/ && touch build/.nojekyll"
   },
   "devDependencies": {
     "babel-preset-es2015": "^6.24.1",
@@ -14,14 +21,8 @@
     "budo": "^10.0.4",
     "standard": "^10.0.3"
   },
-  "keywords": [
-    "freifunk",
-    "stuttgart",
-    "monitoring"
-  ],
-  "author": "Per Guth <mail@perguth.de>",
-  "license": "MIT",
   "dependencies": {
+    "bootstrap": "^3.3.7",
     "choo": "^6.4.1",
     "choo-log": "^7.2.1",
     "choo-persist": "^3.0.2"

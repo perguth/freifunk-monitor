@@ -1,18 +1,12 @@
-/*
-- add node by name or id
-- node name, online status, clientcount, delete from list
-*/
+let choo = require('choo')
+let html = require('choo/html')
+let log = require('choo-log')
+let persist = require('choo-persist')
 
-var choo = require('choo')
-var html = require('choo/html')
-var log = require('choo-log')
-var persist = require('choo-persist')
-
-var app = choo()
+let app = choo()
 app.use(log())
 app.use(persist({name: 'ffs-monitor-' + require('./package.json').version}))
 app.use(nodeStore)
-console.log('window.location.pathname', window.location.pathname)
 app.route('*', mainView)
 app.mount('body')
 
@@ -26,26 +20,43 @@ app.use((state, emitter) => {
 })
 
 function mainView (state, emit) {
-  return html`
-    <body>
-      <header>
-        Add a node: <input type=text placeholder='mac address'> <button onclick=${add}>add</button>
-      </header>
-      <section>
-        <ol>
+  return html`<body><br>
+    <div class=container>
+      <header class='row input-group'>
+        <input class=form-control type=text placeholder='mac address'>
+        <span class=input-group-btn>
+          <button onclick=${add} class='btn btn-primary'>add</button>
+        </span>
+      </header><br>
+      <section class=row>
+        <ol class=list-group>
           ${state.ids.map((id, i) => {
             let node = state.nodes[id]
-            return html`<li>
-              <b>node name</b> (${id}),<br>
+            return html`<li id=${window.Symbol()}
+              class='list-group-item ${!node.isonline ? 'list-group-item-danger' : ''}'
+              draggable=true
+              ondragstart=${pick.bind(null, i)}
+              ondrop=${drop.bind(null, i)}
+              ondragover=${x => false}
+            >
+              <b>node name</b> (${id}),
               ${node.isonline ? 'online' : 'offline'},
-              ${node.clientcount} <button onclick=${remove.bind(null, i)}>❌</button>
-            </li>
-              `
+              <button onclick=${remove.bind(null, i)} class='close float-right' type=button>×</button>
+            </li>`
           })}
         </ol>
       </section>
-    </body>
-  `
+    </div>
+</body>`
+
+  function pick (from, e) {
+    e.dataTransfer.setData('text/plain', from)
+  }
+  function drop (to, e) {
+    e.preventDefault()
+    let from = e.dataTransfer.getData('text')
+    emit('flip', {from, to})
+  }
 
   function add () {
     let id = document.querySelector('header input').value
@@ -85,5 +96,12 @@ function nodeStore (state, emitter) {
 
   emitter.on('updateAll', x => {
     state.ids.forEach(id => emitter.emit('update', id))
+  })
+
+  emitter.on('flip', ({from, to}) => {
+    let tmp = state.ids[to]
+    state.ids[to] = state.ids[from]
+    state.ids[from] = tmp
+    emitter.emit('render')
   })
 }
