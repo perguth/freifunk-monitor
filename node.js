@@ -36,27 +36,18 @@ function nodeStore () {
 app.get(`/version`, (req, res) => res.send(v))
 
 app.get(`/${v}/mac/:mac`, (req, res) => {
-  let node = {
-    ...state.nodes[req.params.mac],
-    timestamp: state.timestamp
-  }
+  let node = Object.assign({}, state.nodes[req.params.mac], {timestamp: state.timestamp})
   res.send(node)
 })
 
 app.get(`/${v}/name/:name`, (req, res) => {
   let mac = state.names[req.params.name]
-  let node = {
-    ...state.nodes[mac],
-    timestamp: state.timestamp
-  }
+  let node = Object.assign({}, state.nodes[mac], {timestamp: state.timestamp})
   res.send(node)
 })
 
 app.get(`/${v}/all`, (req, res) => {
-  let nodes = {
-    ...state.nodes,
-    timestamp: state.timestamp
-  }
+  let nodes = Object.assign({}, state.nodes, {timestamp: state.timestamp})
   res.send(nodes)
 })
 
