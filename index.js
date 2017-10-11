@@ -33,7 +33,7 @@ function mainView (state, emit) {
           ${state.ids.map((id, i) => {
             let node = state.nodes[id]
             return html`<li id=${window.Symbol()}
-              class='list-group-item ${!node.isonline ? 'list-group-item-danger' : ''}'
+              class='list-group-item ${!node.flags.online ? 'list-group-item-danger' : ''}'
               draggable=true
               ondragstart=${pick.bind(null, i)}
               ondrop=${drop.bind(null, i)}
