@@ -30,6 +30,7 @@
     "choo": "^6.4.1",
     "choo-log": "^7.2.1",
     "choo-persist": "^3.0.2",
+    "cors": "^2.8.4",
     "express": "^4.16.2",
     "node-fetch": "^1.7.3"
   }

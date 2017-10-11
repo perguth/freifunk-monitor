@@ -1,3 +1,4 @@
+let cors = require('cors')
 let express = require('express')
 let fetch = require('node-fetch')
 let nanobus = require('nanobus')
@@ -46,4 +47,5 @@ app.get(`/${v}/all`, (req, res) => {
   res.send(nodes)
 })
 
+app.use(cors())
 app.listen(PORT, x => { console.log(`running on :${PORT}`) })
