@@ -51,6 +51,12 @@ function mainView (state, emit) {
           })}
         </ol>
       </section>
+      <footer>
+        <small style='display: block; width: 150px; margin: 0 auto; color: grey;'>
+          <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
+          has the source.
+        </small>
+      </footer>
     </div>
 </body>`
 
