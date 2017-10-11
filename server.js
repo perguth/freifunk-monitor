@@ -5,7 +5,7 @@ let nanobus = require('nanobus')
 let app = express()
 let bus = nanobus()
 let state = {}
-let v = require('./package.json').version[0]
+let v = 'v' + require('./package.json').version[0]
 let PORT = process.env.PORT
 
 nodeStore()

@@ -84,7 +84,7 @@ function nodeStore (state, emitter) {
   })
 
   emitter.on('update', id => {
-    let url = 'https://nodealarm.freifunk-stuttgart.de/' + id
+    let url = 'https://ffs-monitor.perguth.de/v1/mac/' + id
     window.fetch(url).then(res => {
       res.json().then(node => {
         if (!node.length) throw new Error(`API call on ${url} results in empty array.`)
