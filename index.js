@@ -92,7 +92,6 @@ function nodeStore (state, emitter) {
     let url = 'https://ffs-monitor.perguth.de/v1/mac/' + id
     window.fetch(url).then(res => {
       res.json().then(node => {
-        if (!node.length) throw new Error(`API call on ${url} results in empty array.`)
         state.nodes[id] = node[0]
         emitter.emit('render')
       })
