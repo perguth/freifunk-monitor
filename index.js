@@ -92,7 +92,7 @@ function nodeStore (state, emitter) {
     let url = 'https://ffs-monitor.perguth.de/v1/mac/' + id
     window.fetch(url).then(res => {
       res.json().then(node => {
-        state.nodes[id] = node[0]
+        state.nodes[id] = node
         emitter.emit('render')
       })
     })
