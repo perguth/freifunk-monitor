@@ -39,7 +39,7 @@ function mainView (state, emit) {
               ondrop=${drop.bind(null, i)}
               ondragover=${x => false}
             >
-              <b>node name</b> (${id}),
+              <b>${node.name}</b> (${id}),
               ${node.flags.online ? 'online' : 'offline'},
               ${node.clientcount} clients
               <button
