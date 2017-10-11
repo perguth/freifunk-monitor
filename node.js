@@ -1,17 +1,12 @@
 let express = require('express')
 let fetch = require('node-fetch')
 let nanobus = require('nanobus')
-let https = require('https')
-let fs = require('fs')
 
 let app = express()
 let bus = nanobus()
 let state = {}
 let v = require('./package.json').version[0]
-let {PORT, CERT, KEY} = process.env
-
-CERT = fs.readFileSync(CERT, 'utf8')
-KEY = fs.readFileSync(KEY, 'utf8')
+let PORT = process.env.PORT
 
 nodeStore()
 
@@ -51,4 +46,4 @@ app.get(`/${v}/all`, (req, res) => {
   res.send(nodes)
 })
 
-https.createServer({CERT, KEY}, app).listen(PORT, x => { console.log(`running on :${PORT}`) })
+app.listen(PORT, x => { console.log(`running on :${PORT}`) })
