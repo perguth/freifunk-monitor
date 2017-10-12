@@ -1,10 +1,19 @@
 let choo = require('choo')
 let html = require('choo/html')
-let log = require('choo-log')
 let persist = require('choo-persist')
+let socket = require('socket.io-client')('http://localhost:3000')
+
+socket.on('connect', function () {
+  console.log('test')
+})
+socket.on('event', function (data) {})
+socket.on('disconnect', function () {})
+
+socket.on('info', function (msg) {
+  console.log('message: ' + msg.msg)
+})
 
 let app = choo()
-app.use(log())
 app.use(persist({name: 'ffs-monitor-' + require('./package.json').version}))
 app.use(nodeStore)
 app.route('*', mainView)

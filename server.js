@@ -1,13 +1,21 @@
 let cors = require('cors')
-let express = require('express')
 let fetch = require('node-fetch')
-let nanobus = require('nanobus')
+let bus = require('nanobus')()
+let PORT = process.env.PORT
 
-let app = express()
-let bus = nanobus()
+let app = require('express')()
+let server = app.listen(PORT, x => { console.log(`running on :${PORT}`) })
+let io = require('socket.io')(server)
+
+io.sockets.on('connection', function (socket) {
+  console.log('A new user connected!')
+  socket.emit('info', { msg: 'The world is round, there is no up or down.' })
+})
+
+app.use(cors())
+
 let state = {}
 let v = 'v' + require('./package.json').version[0]
-let PORT = process.env.PORT
 
 nodeStore()
 
@@ -46,6 +54,3 @@ app.get(`/${v}/all`, (req, res) => {
   let nodes = Object.assign({}, state.nodes, {timestamp: state.timestamp})
   res.send(nodes)
 })
-
-app.use(cors())
-app.listen(PORT, x => { console.log(`running on :${PORT}`) })
