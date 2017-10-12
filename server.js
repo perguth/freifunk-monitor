@@ -12,7 +12,10 @@ nodeStore()
 // express setup
 let app = require('express')()
 // let server = app.listen(PORT, x => { console.log(`running on :${PORT}`) })
-app.listen(PORT, x => { console.log(`running on :${PORT}`) })
+app.listen(PORT, x => {
+  console.log(`running on :${PORT}`)
+  debug('debug log on')
+})
 app.use(cors())
 
 // let io = require('socket.io')(server)
@@ -22,11 +25,11 @@ app.use(cors())
 // })
 
 // backoff setup
-let minTimeout = 1000 * 60 * 60 * 15
+let minTimeout = 1000 * 60 * 15
 state.lastPull = Date.now()
 backoff = backoff.fibonacci({
   initialDelay: minTimeout,
-  maxDelay: 1000 * 60 * 60 * 60 * 24 * 3
+  maxDelay: 1000 * 60 * 60 * 24 * 3
 })
 backoff.on('ready', (number, delay) => {
   debug(`calling updateAll, try ${number} after ${delay}ms backoff`)
