@@ -35,11 +35,15 @@ app.use((state, emitter) => {
 function mainView (state, emit) {
   return html`<body><br>
     <div class=container>
-      <header class='row input-group'>
-        <span style='position: absolute; left: 13px; top: 7px; right: 12px; z-index: 3;'>
-          ${state.suggestion}
-        </span>
-        <input class=form-control type=text placeholder='mac address' onkeypress=${keypress}>
+      <header class='row input-group dropdown show'>
+        <input class=form-control type=text placeholder='mac address' onkeypress=${keypress} data-toggle=dropdown>
+
+        <div class=dropdown-menu>
+          <a class=dropdown-item href=#>Action</a>
+          <a class=dropdown-item href=#>Another action</a>
+          <a class=dropdown-item href=#>Something else here here here here here here</a>
+        </div>
+
         <span class=input-group-btn>
           <button onclick=${add} class='btn btn-primary'>add</button>
         </span>
@@ -77,7 +81,8 @@ function mainView (state, emit) {
 </body>`
 
   function keypress (e) {
-    // let input = String.fromCharCode(e.keyCode)
+    let input = String.fromCharCode(e.keyCode)
+    console.log(input)
   }
 
   function pick (from, e) {
