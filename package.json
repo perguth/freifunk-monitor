@@ -10,11 +10,11 @@
     "monitoring"
   ],
   "main": "main.js",
-  "browser": "index.js",
+  "browser": "browser.js",
   "scripts": {
     "test": "standard",
-    "start": "budo --live --host localhost index.js:bundle.js",
-    "build": "mkdir -p build && browserify index.js -o build/bundle.js -t [babelify --presets [es2015]] && cp -r index.html assets node_modules build/ && touch build/.nojekyll",
+    "start": "budo --live --host localhost browser.js:bundle.js",
+    "build": "mkdir -p build && browserify browser.js -o build/bundle.js -t [babelify --presets [es2015]] && cp -r index.html assets node_modules build/ && touch build/.nojekyll",
     "server": "nodemon server.js"
   },
   "devDependencies": {
