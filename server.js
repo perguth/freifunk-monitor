@@ -5,6 +5,7 @@ let backoff = require('backoff')
 let bus = require('nanobus')()
 let PORT = process.env.PORT
 
+let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
 let state = {}
 nodeStore()
@@ -42,7 +43,8 @@ function nodeStore () {
   state.nodes = {}
   state.names = {}
   bus.on('updateAll', x => {
-    fetch('https://netinfo.freifunk-stuttgart.de/json/nodes.json')
+    debug('updateAll: fetching JSON')
+    fetch(sourceUrl)
       .then(res => res.json()).then(res => {
         state.timestamp = res.meta.timestamp
         res.nodes.forEach(node => {
@@ -56,7 +58,6 @@ function nodeStore () {
 
 // routes & middleware
 app.use((req, res, next) => {
-  console.log('state.lastPull < (Date.now() - 5000)', state.lastPull < (Date.now() - 5000))
   if (state.lastPull < (Date.now() - minTimeout)) {
     state.lastPull = Date.now()
     backoff.reset()
