@@ -84,6 +84,12 @@ app.get(`/${v}/all`, (req, res) => {
 })
 
 app.get('/', (req, res) => res.send(`<style>
+  a {
+    text-decoration: none;
+  }
+  a:hover {
+    text-decoration: underline;
+  }
   a.github {
     opacity: 0.5;
     color: black;
