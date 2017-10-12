@@ -1,23 +1,26 @@
 let choo = require('choo')
 let html = require('choo/html')
 let persist = require('choo-persist')
-let socket = require('socket.io-client')('http://localhost:3000')
+// let socketIo = require('socket.io-client')
 
-socket.on('connect', function () {
-  console.log('test')
-})
-socket.on('event', function (data) {})
-socket.on('disconnect', function () {})
-
-socket.on('info', function (msg) {
-  console.log('message: ' + msg.msg)
-})
-
+let restUrl = 'https://ffs-monitor.perguth.de/'
+// let restUrl = 'http://localhost:3000'
+// let socket = socketIo(restUrl)
 let app = choo()
 app.use(persist({name: 'ffs-monitor-' + require('./package.json').version}))
 app.use(nodeStore)
 app.route('*', mainView)
 app.mount('body')
+
+// socket.on('connect', function () {
+//   console.log('test')
+// })
+// socket.on('event', function (data) {})
+// socket.on('disconnect', function () {})
+//
+// socket.on('info', function (msg) {
+//   console.log('message: ' + msg.msg)
+// })
 
 app.use((state, emitter) => {
   // emitter.emit('add', '64:70:02:aa:ba:f8')
@@ -32,7 +35,10 @@ function mainView (state, emit) {
   return html`<body><br>
     <div class=container>
       <header class='row input-group'>
-        <input class=form-control type=text placeholder='mac address'>
+        <span style='position: absolute; left: 13px; top: 7px; right: 12px; z-index: 3;'>
+          ${state.suggestion}
+        </span>
+        <input class=form-control type=text placeholder='mac address' onkeypress=${keypress}>
         <span class=input-group-btn>
           <button onclick=${add} class='btn btn-primary'>add</button>
         </span>
@@ -69,6 +75,10 @@ function mainView (state, emit) {
     </div>
 </body>`
 
+  function keypress (e) {
+    // let input = String.fromCharCode(e.keyCode)
+  }
+
   function pick (from, e) {
     e.dataTransfer.setData('text/plain', from)
   }
@@ -104,7 +114,7 @@ function nodeStore (state, emitter) {
   })
 
   emitter.on('update', id => {
-    let url = 'https://ffs-monitor.perguth.de/v1/mac/' + id
+    let url = restUrl + '/v1/mac/' + id
     window.fetch(url).then(res => {
       res.json().then(node => {
         state.nodes[id] = node
