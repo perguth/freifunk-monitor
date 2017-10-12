@@ -1,4 +1,3 @@
-let cors = require('cors')
 let debug = require('debug')('ffs-monitor')
 let fetch = require('node-fetch')
 let backoff = require('backoff')
@@ -17,7 +16,6 @@ app.listen(PORT, x => {
   console.log(`running on :${PORT}`)
   debug('debug log on')
 })
-app.use(cors())
 
 // let io = require('socket.io')(server)
 // io.sockets.on('connection', function (socket) {
