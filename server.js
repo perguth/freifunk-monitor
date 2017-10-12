@@ -128,7 +128,7 @@ app.get('/', (req, res) => res.send(`<style>
         return `<li><a href=${href}>${route}</a></li>`
       }).join('')}
     </ul>
-    <small style='display: block; width: 150px; margin: 0 auto;'><a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
+    <small style='text-align: center; display: block;'><a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
     has the source.</small>
   </section></div>`))
 
