@@ -3,7 +3,7 @@ let bus = require('nanobus')()
 let debug = require('debug')('ffs-monitor')
 let express = require('express')
 let fetch = require('node-fetch')
-let PORT = process.env.PORT
+let PORT = process.env.PORT || 3000
 
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
