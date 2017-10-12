@@ -29,6 +29,7 @@ app.use((state, emitter) => {
     console.log('interval')
     emitter.emit('updateAll')
   }, 1000 * 10)
+  emitter.emit('updateAll')
 })
 
 function mainView (state, emit) {

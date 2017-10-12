@@ -1,7 +1,8 @@
-let debug = require('debug')('ffs-monitor')
-let fetch = require('node-fetch')
 let backoff = require('backoff')
 let bus = require('nanobus')()
+let debug = require('debug')('ffs-monitor')
+let express = require('express')
+let fetch = require('node-fetch')
 let PORT = process.env.PORT
 
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
@@ -10,7 +11,8 @@ let state = {}
 nodeStore()
 
 // express setup
-let app = require('express')()
+let app = express()
+app.use('/assets', express.static('assets'))
 // let server = app.listen(PORT, x => { console.log(`running on :${PORT}`) })
 app.listen(PORT, x => {
   console.log(`running on :${PORT}`)
@@ -80,3 +82,55 @@ app.get(`/${v}/all`, (req, res) => {
   let nodes = Object.assign({}, state.nodes, {timestamp: state.timestamp})
   res.send(nodes)
 })
+
+app.get('/', (req, res) => res.send(`<style>
+  a.github {
+    opacity: 0.5;
+    color: black;
+    font-weight: bold;
+    text-decoration: none;
+  }
+  a.github:hover {
+    text-decoration: underline;
+  }
+  a.github::before {
+    content: '';
+    background: url(assets/github.png) no-repeat;
+    background-size: 10px;
+    display: inline-block;
+    width: 12px;
+    height: 10px;
+    margin-left: 2px;
+  }
+</style><div style='width: 240px; margin: 0 auto; position: relative; height: 100%;'>
+  <section style='display: block; color: grey; position: absolute; top: 15%;'>
+    <h1 style='border-bottom: 1px dotted grey;'>ffs-monitor ${v}</h1>
+    <p style='text-align: justify;'>
+      This server regularly pulls and caches the <a href=https://netinfo.freifunk-stuttgart.de/json/nodes.json>JSON file</a>
+      that is published by <a href=https://freifunk-stuttgart.de/>freifunk-stuttgart.de</a> containing
+      information about all registered nodes. Information about individual nodes is then exposed via a REST interface:
+    <ul style='border: 1px dotted grey; border-width: 0 0 1px; padding: 0 0 16px 26px;'>
+      ${app._router.stack.filter(x => x.route).map(r => {
+        let route = r.route.path
+        let href = route
+        let urlVar = route.split(':')[1]
+        if (route === '/') return
+        if (route.includes(':')) {
+          let item = randomItem(route, urlVar)
+          href = href.replace(`:${urlVar}`, item)
+        }
+        return `<li><a href=${href}>${route}</a></li>`
+      }).join('')}
+    </ul>
+    <small style='display: block; width: 150px; margin: 0 auto;'><a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
+    has the source.</small>
+  </section></div>`))
+
+function randomItem (route, urlVar) {
+  if (Object.keys(state.nodes).length === 0) return urlVar
+  let nodes = state.nodes
+  let macs = Object.keys(nodes)
+  let randomMac = macs[macs.length * Math.random() << 0]
+  if (urlVar === 'mac') return randomMac
+  return nodes[macs[macs.length * Math.random() << 0]][urlVar]
+}
