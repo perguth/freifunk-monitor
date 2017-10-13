@@ -78,7 +78,8 @@ function mainView (state, emit) {
   function search ({keyCode}) {
     let newInput = String.fromCharCode(keyCode)
     let previousInput = document.querySelectorAll('header > input')[0].value
-    socket.emit('search', previousInput + newInput)
+    let search = previousInput + newInput
+    socket.emit('search', search)
   }
 
   function pick (from, e) {

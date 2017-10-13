@@ -13,7 +13,8 @@
   "browser": "browser.js",
   "scripts": {
     "test": "standard",
-    "start": "budo --live --host localhost browser.js:bundle.js",
+    "start": "npm run browser & npm run server",
+    "browser": "budo --live --host localhost browser.js:bundle.js",
     "build": "mkdir -p build && browserify browser.js -o build/bundle.js -t [babelify --presets [es2015]] && cp -r index.html assets build/ && touch build/.nojekyll",
     "server": "nodemon server.js"
   },
