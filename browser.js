@@ -50,13 +50,16 @@ let input = new Input()
 function mainView (state, emit) {
   return html`<body><br>
     <div class=container><header class=row>
-        <div class='col  input-group dropdown show'>
+        <div class='col input-group dropdown show'>
         ${input.render({onkeypress: search, onfocus: showSuggestions, onblur: hideSuggestions})}
 
         <div class=dropdown-menu
-          style='${state.displaySuggestions ? 'display: block;' : 'display: hidden;'} width: 92.3%;'>
+          style='
+            ${state.displaySuggestions ? 'display: block;' : 'display: hidden;'}
+            width: calc(100% - 30px); margin-left: 15px; margin-right: 15px;
+          '>
           ${state.suggestions.map((x, i) => html`
-            <button onclick=${selected.bind(null, i)} class=dropdown-item>${x}</button>
+            <a onclick=${selected.bind(null, i)} class=dropdown-item>${x}</a>
           `)}
         </div>
 
@@ -65,7 +68,7 @@ function mainView (state, emit) {
         </span>
       </div></header><br>
       <div class=row><div class=col style='text-align: center;'>
-        <i>last update: ${moment(state.timestamp).fromNow()}</i>
+        <i style='color: grey'>last update: ${moment(state.timestamp).fromNow()}</i>
       </div></div>
       <section class=row><div class=col>
         <br>
