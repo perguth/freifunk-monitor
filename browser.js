@@ -17,6 +17,9 @@ app.use(nodeStore)
 app.route('*', mainView)
 app.mount('body')
 
+window.Notification.requestPermission()
+function notify (msg) { new window.Notification(msg) } // eslint-disable-line
+
 app.use((state, emitter) => {
   socket.on('getId', id => {
     emitter.emit('add', id)
@@ -97,7 +100,7 @@ function mainView (state, emit) {
         </small>
       </footer>
     </div>
-</body>`
+  </body>`
 
   function hideSuggestions () {
     setTimeout(x => emit('toggleSuggestions', false), 300)
@@ -186,6 +189,12 @@ function nodeStore (state, emitter) {
     window.fetch(url).then(res => {
       res.json().then(node => {
         state.timestamp = node.timestamp
+        if (!state.nodes[id].online && node.online) {
+          notify(`Node ${node.name} came online!`)
+        }
+        if (state.nodes[id].online && !node.online) {
+          notify(`Node ${node.name} went offline!`)
+        }
         state.nodes[id] = node
         emitter.emit('render')
       })
