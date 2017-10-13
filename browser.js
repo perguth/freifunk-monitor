@@ -119,7 +119,7 @@ function mainView (state, emit) {
       <footer>
         <br>
         <small style='display: block; text-align: center; color: grey;'>
-          <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
+          <code>v${require('./package.json').version}</code> <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
           has the source. <a href=${
             'data:application/octet-stream;charset=utf-8;base64,' +
             window.btoa(window.localStorage.getItem(storageName))
