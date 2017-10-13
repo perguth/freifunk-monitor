@@ -5,7 +5,7 @@ let persist = require('choo-persist')
 let socketIo = require('socket.io-client')
 
 let restUrl = 'https://ffs-monitor.perguth.de/'
-let wsUrl = 'http://localhost:9000'
+let wsUrl = 'https://ffs-monitor.perguth.de/'
 let minSearchLengh = 5
 let socket = socketIo(wsUrl)
 let app = choo()
