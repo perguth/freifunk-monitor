@@ -11,7 +11,8 @@ let minSearchLengh = 5
 let pollingTime = 1000 * 60 * 15
 let socket = socketIo(wsUrl)
 let app = choo()
-app.use(persist({name: 'ffs-monitor-' + require('./package.json').version}))
+let storageName = 'ffs-monitor-' + require('./package.json').version
+app.use(persist({name: storageName}))
 app.use(uiStore)
 app.use(nodeStore)
 app.route('*', mainView)
@@ -119,11 +120,18 @@ function mainView (state, emit) {
         <br>
         <small style='display: block; text-align: center; color: grey;'>
           <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
-          has the source.
+          has the source. <a href=${
+            'data:application/octet-stream;charset=utf-8;base64,' +
+            window.btoa(window.localStorage.getItem(storageName))
+          } download=ffs-monitor.localStorage>Export</a> or <a onclick=${importData}>import</a> data.
         </small>
       </footer>
     </div>
   </body>`
+
+  function importData (data) {
+    console.log('Currently not automated. You can paste the content of your backup via Chrome developer tools.')
+  }
 
   function hideSuggestions () {
     setTimeout(x => emit('toggleSuggestions', false), 300)
