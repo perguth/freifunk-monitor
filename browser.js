@@ -4,8 +4,8 @@ let Nanocomponent = require('nanocomponent')
 let persist = require('choo-persist')
 let socketIo = require('socket.io-client')
 
-let restUrl = 'https://ffs-monitor.perguth.de/'
-let wsUrl = 'https://ffs-monitor.perguth.de/'
+let restUrl = 'ffs-monitor.perguth.de'
+let wsUrl = 'ffs-monitor.perguth.de:63054'
 let minSearchLengh = 5
 let socket = socketIo(wsUrl)
 let app = choo()
