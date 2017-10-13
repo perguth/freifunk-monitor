@@ -1,6 +1,8 @@
 # ffs-monitor
 > :crystal_ball: Monitor freifunk-stuttgart routers from your browser.
 
+[![screenshot](assets/appshot.171013.png)](https://perguth.js.org/ffs-monitor/)
+
 ## Related
 
 - [knotenbot](https://github.com/freifunk-darmstadt/knotenbot) `python`
