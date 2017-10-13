@@ -18,17 +18,19 @@ let app = express()
 app.use('/assets', express.static('assets'))
 let server
 
-// https
-let credentials = {}
-if (process.env.CERT) {
+// http(s) server
+if (!process.env.CERT) {
+  server = app.listen(PORT, x => { console.log(`HTTP server on :${PORT}`) })
+} else {
   let cert = fs.readFileSync(process.env.CERT, 'utf8')
   let key = fs.readFileSync(process.env.KEY, 'utf8')
-  credentials = {key, cert}
+  server = https.createServer({key, cert}, app)
+  server.listen(PORT, x => { console.log(`HTTPS server on :${PORT}`) })
+  if (process.env.HTTP_PORT) {
+    let HTTP_PORT = process.env.HTTP_PORT
+    app.listen(HTTP_PORT, x => { console.log(`HTTP server on :${HTTP_PORT}`) })
+  }
 }
-server = process.env.CERT
-  ? https.createServer(credentials, app)
-  : app.listen(PORT, x => { console.log(`running on :${PORT}`) })
-server.listen(PORT)
 
 // socket.io
 let io = require('socket.io')(server)
