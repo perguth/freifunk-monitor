@@ -36,7 +36,7 @@ let Input = class Component extends Nanocomponent {
     this.state = state
     return html`
       <input onkeypress=${state.onkeypress} onfocus=${state.onfocus} onblur=${state.onblur}
-      class=form-control type=text placeholder='mac address' data-toggle=dropdown>
+      class=form-control type=text placeholder='node name or mac address' data-toggle=dropdown>
     `
   }
   update (x) {}
