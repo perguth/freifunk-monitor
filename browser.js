@@ -11,7 +11,7 @@ let minSearchLengh = 5
 let pollingTime = 1000 * 60 * 15
 let socket = socketIo(wsUrl)
 let app = choo()
-let storageName = 'ffs-monitor-' + require('./package.json').version
+let storageName = 'ffs-monitor-v' + require('./package.json').version[0]
 app.use(persist({name: storageName}))
 app.use(uiStore)
 app.use(nodeStore)
