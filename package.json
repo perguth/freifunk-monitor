@@ -43,5 +43,13 @@
     "popper.js": "^1.12.5",
     "socket.io": "^2.0.3",
     "utf-8-validate": "^3.0.3"
-  }
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/perguth/ffs-monitor.git"
+  },
+  "bugs": {
+    "url": "https://github.com/perguth/ffs-monitor/issues"
+  },
+  "homepage": "https://github.com/perguth/ffs-monitor#readme"
 }
