@@ -1,32 +1,25 @@
 let choo = require('choo')
 let html = require('choo/html')
 let persist = require('choo-persist')
-// let socketIo = require('socket.io-client')
+let socketIo = require('socket.io-client')
 
 let restUrl = 'https://ffs-monitor.perguth.de/'
-// let restUrl = 'http://localhost:3000'
-// let socket = socketIo(restUrl)
+let wsUrl = 'http://localhost:9000'
+let socket = socketIo(wsUrl)
 let app = choo()
 app.use(persist({name: 'ffs-monitor-' + require('./package.json').version}))
+app.use(uiStore)
 app.use(nodeStore)
 app.route('*', mainView)
 app.mount('body')
 
-// socket.on('connect', function () {
-//   console.log('test')
-// })
-// socket.on('event', function (data) {})
-// socket.on('disconnect', function () {})
-//
-// socket.on('info', function (msg) {
-//   console.log('message: ' + msg.msg)
-// })
-
 app.use((state, emitter) => {
+  socket.on('search', x => {
+    emitter.emit('suggestion', x)
+  })
   // emitter.emit('add', '64:70:02:aa:ba:f8')
   // emitter.emit('add', '14:cc:20:8a:3c:7e')
   window.setInterval(x => {
-    console.log('interval')
     emitter.emit('updateAll')
   }, 1000 * 10)
   emitter.emit('updateAll')
@@ -36,12 +29,12 @@ function mainView (state, emit) {
   return html`<body><br>
     <div class=container>
       <header class='row input-group dropdown show'>
-        <input class=form-control type=text placeholder='mac address' onkeypress=${keypress} data-toggle=dropdown>
+        <input onkeypress=${search} class=form-control type=text placeholder='mac address' data-toggle=dropdown>
 
         <div class=dropdown-menu>
-          <a class=dropdown-item href=#>Action</a>
-          <a class=dropdown-item href=#>Another action</a>
-          <a class=dropdown-item href=#>Something else here here here here here here</a>
+          ${state.suggestions.map((x, i) => html`
+            <a onclick=${select.bind(null, i)} class=dropdown-item href=#>${x}</a>
+          `)}
         </div>
 
         <span class=input-group-btn>
@@ -80,9 +73,12 @@ function mainView (state, emit) {
     </div>
 </body>`
 
-  function keypress (e) {
-    let input = String.fromCharCode(e.keyCode)
-    console.log(input)
+  function select () {}
+
+  function search ({keyCode}) {
+    let newInput = String.fromCharCode(keyCode)
+    let previousInput = document.querySelectorAll('header > input')[0].value
+    socket.emit('search', previousInput + newInput)
   }
 
   function pick (from, e) {
@@ -101,6 +97,15 @@ function mainView (state, emit) {
   function remove (i) {
     emit('remove', i)
   }
+}
+
+function uiStore (state, emitter) {
+  state.suggestions = state.suggestions || []
+
+  emitter.on('suggestion', x => {
+    state.suggestions = [...x.macs, ...x.names]
+    emitter.emit('render')
+  })
 }
 
 function nodeStore (state, emitter) {

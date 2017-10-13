@@ -3,7 +3,7 @@ let bus = require('nanobus')()
 let debug = require('debug')('ffs-monitor')
 let express = require('express')
 let fetch = require('node-fetch')
-let PORT = process.env.PORT || 3000
+let PORT = process.env.PORT || 9000
 
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
@@ -13,17 +13,19 @@ nodeStore()
 // express setup
 let app = express()
 app.use('/assets', express.static('assets'))
-// let server = app.listen(PORT, x => { console.log(`running on :${PORT}`) })
-app.listen(PORT, x => {
-  console.log(`running on :${PORT}`)
-  debug('debug log on')
-})
+let server = app.listen(PORT, x => { console.log(`running on :${PORT}`) })
 
-// let io = require('socket.io')(server)
-// io.sockets.on('connection', function (socket) {
-//   console.log('A new user connected!')
-//   socket.emit('info', { msg: 'The world is round, there is no up or down.' })
-// })
+let io = require('socket.io')(server)
+io.sockets.on('connection', function (socket) {
+  socket.on('search', req => {
+    if (req.length < 3) return
+    let results = {
+      names: Object.keys(state.names).filter(name => name.includes(req)),
+      macs: Object.keys(state.nodes).filter(mac => mac.includes(req))
+    }
+    socket.emit('search', results)
+  })
+})
 
 // backoff setup
 let minTimeout = 1000 * 60 * 15
