@@ -48,6 +48,14 @@ let Input = class Component extends Nanocomponent {
 let input = new Input()
 
 function mainView (state, emit) {
+  let clientCount = 0
+  let nodeCount = 0
+  state.ids.reduce((_, id) => {
+    let node = state.nodes[id]
+    if (!node.flags) return
+    clientCount += +node.flags.online
+    nodeCount += +node.clientcount
+  })
   return html`<body><br>
     <div class=container><header class=row>
         <div class='col input-group dropdown show'>
@@ -64,11 +72,15 @@ function mainView (state, emit) {
         </div>
 
         <span class=input-group-btn>
-          <button onclick=${add} class='btn btn-primary'>add</button>
+          <button onclick=${add} class='btn btn-secondary'>add</button>
         </span>
       </div></header><br>
       <div class=row><div class=col style='text-align: center;'>
-        <i style='color: grey'>last update: ${moment(state.timestamp).fromNow()}</i>
+        <i style='color: grey'>
+          last update <b>${moment(state.timestamp).fromNow()}</b> -
+          overall <b>${nodeCount} of ${state.ids.length} nodes online</b>
+          serving <b>${clientCount} clients</b>
+        </i>
       </div></div>
       <section class=row><div class=col>
         <br>
