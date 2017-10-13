@@ -59,7 +59,7 @@ function mainView (state, emit) {
             width: calc(100% - 30px); margin-left: 15px; margin-right: 15px;
           '>
           ${state.suggestions.map((x, i) => html`
-            <a onclick=${selected.bind(null, i)} class=dropdown-item>${x}</a>
+            <button onclick=${selected.bind(null, i)} class=dropdown-item>${x}</button>
           `)}
         </div>
 
@@ -115,7 +115,7 @@ function mainView (state, emit) {
   }
 
   function selected (i) { // put selection into input field
-    let selection = document.querySelectorAll('header button')[i].innerHTML
+    let selection = document.querySelectorAll('header .dropdown-menu button')[i].innerHTML
     document.querySelectorAll('header input')[0].value = selection
   }
 

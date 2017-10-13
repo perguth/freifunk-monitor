@@ -46,11 +46,9 @@ let getId = memoize(lookup => {
 })
 io.sockets.on('connection', function (socket) {
   socket.on('getId', lookup => {
-    console.log('socket on: getId', lookup)
     socket.emit('getId', getId(lookup))
   })
   socket.on('search', x => {
-    console.log('socket on: search', x)
     if (x.length < minSearchLengh) return
     let results = {
       names: Object.keys(state.names).filter(name => name.includes(x)),
