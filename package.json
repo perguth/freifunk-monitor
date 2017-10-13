@@ -13,9 +13,9 @@
   "browser": "browser.js",
   "scripts": {
     "test": "standard",
-    "start": "npm run browser & npm run server",
-    "browser": "budo --live --host localhost browser.js:bundle.js",
-    "build": "mkdir -p build && browserify browser.js -o build/bundle.js -t [babelify --presets [es2015]] && cp -r index.html assets build/ && touch build/.nojekyll",
+    "start": "REST_URL=http://localhost:9000 WS_URL=$REST_URL npm run browser & npm run server",
+    "browser": "budo --live --host localhost browser.js:bundle.js -- -t envify",
+    "build": "mkdir -p build && browserify browser.js -o build/bundle.js -t [envify, babelify --presets [es2015]] && cp -r index.html assets build/ && touch build/.nojekyll",
     "server": "nodemon server.js"
   },
   "devDependencies": {
@@ -33,7 +33,9 @@
     "choo-log": "^7.2.1",
     "choo-persist": "^3.0.2",
     "debug": "^3.1.0",
+    "envify": "^4.1.0",
     "express": "^4.16.2",
+    "fast-memoize": "^2.2.8",
     "nanocomponent": "^6.4.2",
     "node-fetch": "^1.7.3",
     "popper.js": "^1.12.5",

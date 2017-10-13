@@ -1,8 +1,8 @@
 language: node_js
 node_js:
-- node
+  - node
 after_success:
-- npm run build
+  - npm run build
 deploy:
   provider: pages
   skip_cleanup: true
@@ -13,3 +13,5 @@ deploy:
 env:
   matrix:
     secure: R6jeGgUOVmk6Lk62iaOPapStCyb5ULIi4r0/0n/cTN195kb7+3svW6yW8cX1Gyb/ZnbeEAuBNQiJGYwug6ZwoMmG2C+5gjPIOoUZUl45Zv+rxLcyh/iLgYNQMLDzZnPxZe+SJ0t2PGSNDM+J1H5z6u48Fc1KtrYtgwj0sU1w0NDe7e4PaXuPnLT2ZPWW8XSlRRhA+OtHnt+WOERWkBt5mjIQcMgB8rSmWFfaJfLl5jzsqVfZb69qIqBV9XyQPfrqO6DDw+J8xto8rO1tPulmTqT78GXfaCunOjfErbTEJxIE6omRHoxVPQTIE0eAyg+5EbslfKi+LefGHyfcTaaPNoHvbqkxjEJYt2AA/8NQJne/VJt4tmRUGvsVJ1EH8m+kjBtEWusVlSfBpDDdBoALXDwTUPpMJWwZA//K2weGdDCHP4p4sc8PAdgeswt271bo6I03krTWeE1ealxiJvL8vn5ix89idXkkoJhe/2+MqZrIhFFF2KassJEUoixalabSx9SfyqAiSyeYyMeWqvMv4fuSABw7F24H30omCz1XyOaM1zGOXneg3vElIf2Oq5uVoPaUXX2KWBYPgy6bQO/TBAXV0tmoV9W3QbXC3OhzYbw1MXTRTWBySP2p1rQnXbMEeoGVYC0JLw/4+TWZwq0usaFQ4DTFCvkWf+CJbmss4I0=
+  - REST_URL=https://ffs-monitor.perguth.de
+  - WS_URL=wss://ffs-monitor.perguth.de:63054
