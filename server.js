@@ -28,7 +28,7 @@ if (process.env.CERT) {
 server = process.env.CERT
   ? https.createServer(credentials, app)
   : app.listen(PORT, x => { console.log(`running on :${PORT}`) })
-server.listen(credentials, PORT)
+server.listen(PORT)
 
 // socket.io
 let io = require('socket.io')(server)
