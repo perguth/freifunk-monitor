@@ -85,7 +85,7 @@ function mainView (state, emit) {
         <i style='color: grey'>
           last update <b>${moment(state.timestamp).fromNow()}</b> -
           overall <b>${nodeCount} of ${state.ids.length} nodes online</b>
-          serving <b>${clientCount} clients</b>
+          serving <b>${clientCount} client${clientCount !== 1 ? 's' : ''}</b>
         </i>
       </div></div>
       <section class=row><div class=col>
@@ -126,6 +126,7 @@ function mainView (state, emit) {
           } download=ffs-monitor.localStorage>Export</a> or <a onclick=${importData}>import</a> data.
         </small>
       </footer>
+      <br>
     </div>
   </body>`
 
