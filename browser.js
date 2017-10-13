@@ -145,10 +145,6 @@ function mainView (state, emit) {
     <input type=file style='display: none;'>
   </body>`
 
-  function importData (data) {
-    console.log('Currently not automated. You can paste the content of your backup via Chrome developer tools.')
-  }
-
   function hideSuggestions () {
     setTimeout(x => emit('toggleSuggestions', false), 300)
   }
