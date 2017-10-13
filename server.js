@@ -4,6 +4,8 @@ let debug = require('debug')('ffs-monitor')
 let express = require('express')
 let fetch = require('node-fetch')
 let PORT = process.env.PORT || 9000
+let https = require('https')
+let fs = require('fs')
 
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
@@ -14,8 +16,21 @@ nodeStore()
 // express setup
 let app = express()
 app.use('/assets', express.static('assets'))
-let server = app.listen(PORT, x => { console.log(`running on :${PORT}`) })
+let server
 
+// https
+let credentials = {}
+if (process.env.CERT) {
+  let cert = fs.readFileSync(process.env.CERT, 'utf8')
+  let key = fs.readFileSync(process.env.KEY, 'utf8')
+  credentials = {key, cert}
+}
+server = process.env.CERT
+  ? https.createServer(credentials, app)
+  : app.listen(PORT, x => { console.log(`running on :${PORT}`) })
+server.listen(credentials, PORT)
+
+// socket.io
 let io = require('socket.io')(server)
 io.sockets.on('connection', function (socket) {
   socket.on('search', req => {
