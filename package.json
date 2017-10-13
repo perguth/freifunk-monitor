@@ -15,7 +15,7 @@
     "test": "standard",
     "start": "REST_URL=http://localhost:9000 WS_URL=$REST_URL npm run browser & npm run server",
     "browser": "budo --live --host localhost browser.js:bundle.js -- -t envify",
-    "build": "mkdir -p build && browserify browser.js -o build/bundle.js -t [envify, babelify --presets [es2015]] && cp -r index.html assets build/ && touch build/.nojekyll",
+    "build": "mkdir -p build && browserify browser.js -o build/bundle.js -t envify -t babelify --presets [es2015] && cp -r index.html assets build/ && touch build/.nojekyll",
     "server": "nodemon server.js"
   },
   "devDependencies": {
