@@ -1,5 +1,5 @@
 # ffs-monitor
-> :crystal_ball: Monitor freifunk-stuttgart routers from your browser.
+> :crystal_ball: Monitor [freifunk-stuttgart](https://freifunk-stuttgart.de/) routers from your browser.
 
 [![screenshot](assets/appshot.171013.png)](https://perguth.js.org/ffs-monitor/)
 
