@@ -7,6 +7,7 @@ let PORT = process.env.PORT || 9000
 let https = require('https')
 let fs = require('fs')
 let memoize = require('fast-memoize')
+let cors = require('cors')
 
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
@@ -21,6 +22,7 @@ app.use('/assets', express.static('assets'))
 
 // server setup
 if (!process.env.CERT) {
+  app.use(cors())
   server = app.listen(PORT, x => { console.log(`HTTP server on :${PORT}`) })
 } else {
   let cert = fs.readFileSync(process.env.CERT, 'utf8')
@@ -35,7 +37,7 @@ if (!process.env.CERT) {
 
 // socket.io
 let io = require('socket.io')(server)
-let getMac = memoize(lookup => {
+let getId = memoize(lookup => {
   let res
   res = state.names[lookup]
   if (res) return res
@@ -43,16 +45,16 @@ let getMac = memoize(lookup => {
   return res
 })
 io.sockets.on('connection', function (socket) {
-  socket.on('getMac', lookup => {
-    console.log('socket on: getMac', lookup)
-    socket.emit('getMac', getMac(lookup))
+  socket.on('getId', lookup => {
+    console.log('socket on: getId', lookup)
+    socket.emit('getId', getId(lookup))
   })
   socket.on('search', x => {
     console.log('socket on: search', x)
     if (x.length < minSearchLengh) return
     let results = {
       names: Object.keys(state.names).filter(name => name.includes(x)),
-      macs: Object.keys(state.nodes).filter(mac => mac.includes(x))
+      ids: Object.keys(state.nodes).filter(id => id.includes(x))
     }
     socket.emit('search', results)
   })
@@ -100,14 +102,15 @@ app.use((req, res, next) => {
 
 app.get(`/version`, (req, res) => res.send(v))
 
-app.get(`/${v}/mac/:mac`, (req, res) => {
-  let node = Object.assign({}, state.nodes[req.params.mac], {timestamp: state.timestamp})
+app.get(`/${v}/id/:id`, (req, res) => {
+  let id = req.params.id
+  let node = Object.assign({}, state.nodes[id], {timestamp: state.timestamp})
   res.send(node)
 })
 
 app.get(`/${v}/name/:name`, (req, res) => {
-  let mac = state.names[req.params.name]
-  let node = Object.assign({}, state.nodes[mac], {timestamp: state.timestamp})
+  let id = state.names[req.params.name]
+  let node = Object.assign({}, state.nodes[id], {timestamp: state.timestamp})
   res.send(node)
 })
 
@@ -168,8 +171,8 @@ app.get('/', (req, res) => res.send(`<style>
 function randomItem (route, urlVar) {
   if (Object.keys(state.nodes).length === 0) return urlVar
   let nodes = state.nodes
-  let macs = Object.keys(nodes)
-  let randomMac = macs[macs.length * Math.random() << 0]
-  if (urlVar === 'mac') return randomMac
-  return nodes[macs[macs.length * Math.random() << 0]][urlVar]
+  let ids = Object.keys(nodes)
+  let randomId = ids[ids.length * Math.random() << 0]
+  if (urlVar === 'id') return randomId
+  return nodes[ids[ids.length * Math.random() << 0]][urlVar]
 }

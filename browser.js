@@ -3,10 +3,12 @@ let html = require('choo/html')
 let Nanocomponent = require('nanocomponent')
 let persist = require('choo-persist')
 let socketIo = require('socket.io-client')
+let moment = require('moment')
 
 let restUrl = process.env.REST_URL
 let wsUrl = process.env.WS_URL
 let minSearchLengh = 5
+let pollingTime = 1000 * 60 * 15
 let socket = socketIo(wsUrl)
 let app = choo()
 app.use(persist({name: 'ffs-monitor-' + require('./package.json').version}))
@@ -16,17 +18,13 @@ app.route('*', mainView)
 app.mount('body')
 
 app.use((state, emitter) => {
-  socket.on('getMac', mac => {
-    emitter.emit('add', mac)
+  socket.on('getId', id => {
+    emitter.emit('add', id)
   })
   socket.on('search', x => {
     emitter.emit('suggestion', x)
   })
-  // emitter.emit('add', '64:70:02:aa:ba:f8')
-  // emitter.emit('add', '14:cc:20:8a:3c:7e')
-  window.setInterval(x => {
-    emitter.emit('updateAll')
-  }, 1000 * 10)
+  window.setInterval(x => emitter.emit('updateAll'), pollingTime)
   emitter.emit('updateAll')
 })
 
@@ -39,7 +37,7 @@ let Input = class Component extends Nanocomponent {
     this.state = state
     return html`
       <input onkeypress=${state.onkeypress} onfocus=${state.onfocus} onblur=${state.onblur}
-      class=form-control type=text placeholder='node name or mac address' data-toggle=dropdown>
+      class=form-control type=text placeholder='name or mac address' data-toggle=dropdown>
     `
   }
   update (x) {}
@@ -48,8 +46,8 @@ let input = new Input()
 
 function mainView (state, emit) {
   return html`<body><br>
-    <div class=container>
-      <header class='row input-group dropdown show'>
+    <div class=container><header class=row>
+        <div class='col  input-group dropdown show'>
         ${input.render({onkeypress: search, onfocus: showSuggestions, onblur: hideSuggestions})}
 
         <div class=dropdown-menu
@@ -62,11 +60,16 @@ function mainView (state, emit) {
         <span class=input-group-btn>
           <button onclick=${add} class='btn btn-primary'>add</button>
         </span>
-      </header><br>
-      <section class=row>
-        <ol class=list-group>
+      </div></header><br>
+      <div class=row><div class=col style='text-align: center;'>
+        <i>last update: ${moment(state.timestamp).fromNow()}</i>
+      </div></div>
+      <section class=row><div class=col>
+        <br>
+        <ul class=list-group>
           ${state.ids.map((id, i) => {
             let node = state.nodes[id]
+            if (!node.flags) return
             return html`<li id=${window.Symbol()}
               class='list-group-item ${!node.flags.online ? 'list-group-item-danger' : ''}'
               draggable=true
@@ -80,13 +83,14 @@ function mainView (state, emit) {
               <button
                 onclick=${remove.bind(null, i)}
                 class='close float-right'
-                style='margin-top: -2px;'
+                style='margin-top: -2px; cursor: pointer;'
                 type=button>×</button>
             </li>`
           })}
-        </ol>
-      </section>
+        </ul>
+      </div></section>
       <footer>
+        <br>
         <small style='display: block; text-align: center; color: grey;'>
           <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
           has the source.
@@ -100,18 +104,18 @@ function mainView (state, emit) {
   }
 
   function showSuggestions () {
-    let input = document.querySelectorAll('header > input')[0].value
+    let input = document.querySelectorAll('header input')[0].value
     if (input.length >= minSearchLengh) emit('toggleSuggestions', true)
   }
 
   function selected (i) { // put selection into input field
-    let selection = document.querySelectorAll('header > div > button')[i].innerHTML
-    document.querySelectorAll('header > input')[0].value = selection
+    let selection = document.querySelectorAll('header button')[i].innerHTML
+    document.querySelectorAll('header input')[0].value = selection
   }
 
   function search ({keyCode}) { // google instant style
     let newInput = String.fromCharCode(keyCode)
-    let previousInput = document.querySelectorAll('header > input')[0].value
+    let previousInput = document.querySelectorAll('header input')[0].value
     let search = previousInput + newInput
     if (search.length < minSearchLengh) {
       emit('toggleSuggestions', false)
@@ -133,8 +137,8 @@ function mainView (state, emit) {
 
   function add () {
     let input = document.querySelector('header input').value
-    console.log('socket emit: getMac', input)
-    socket.emit('getMac', input)
+    socket.emit('getId', input)
+    document.querySelector('header input').value = ''
   }
   function remove (i) {
     emit('remove', i)
@@ -155,7 +159,7 @@ function uiStore (state, emitter) {
     emitter.emit('render')
   })
   emitter.on('suggestion', x => {
-    state.suggestions = [...x.names, ...x.macs]
+    state.suggestions = [...x.names, ...x.ids]
     emitter.emit('render')
   })
 }
@@ -163,6 +167,7 @@ function uiStore (state, emitter) {
 function nodeStore (state, emitter) {
   state.ids = state.ids || []
   state.nodes = state.nodes || {}
+  state.timestamp = '' || state.timestamp
 
   emitter.on('add', id => {
     if (state.ids.indexOf(id) !== -1) return
@@ -177,9 +182,10 @@ function nodeStore (state, emitter) {
   })
 
   emitter.on('update', id => {
-    let url = restUrl + '/v1/mac/' + id
+    let url = restUrl + '/v1/id/' + id
     window.fetch(url).then(res => {
       res.json().then(node => {
+        state.timestamp = node.timestamp
         state.nodes[id] = node
         emitter.emit('render')
       })
