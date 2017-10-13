@@ -123,7 +123,7 @@ function mainView (state, emit) {
           has the source. <a href=${
             'data:application/octet-stream;charset=utf-8;base64,' +
             window.btoa(window.localStorage.getItem(storageName))
-          } download=ffs-monitor.localStorage>Export</a> or <a onclick=${importData}>import</a> data.
+          } download=ffs-monitor.localStorage.txt>Export</a> or <a onclick=${importData}>import</a> data.
         </small>
       </footer>
       <br>
