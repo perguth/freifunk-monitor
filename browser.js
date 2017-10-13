@@ -4,8 +4,8 @@ let Nanocomponent = require('nanocomponent')
 let persist = require('choo-persist')
 let socketIo = require('socket.io-client')
 
-let restUrl = 'ffs-monitor.perguth.de'
-let wsUrl = 'ffs-monitor.perguth.de:63054'
+let restUrl = process.env.REST_URL
+let wsUrl = process.env.WS_URL
 let minSearchLengh = 5
 let socket = socketIo(wsUrl)
 let app = choo()
@@ -16,6 +16,9 @@ app.route('*', mainView)
 app.mount('body')
 
 app.use((state, emitter) => {
+  socket.on('getMac', mac => {
+    emitter.emit('add', mac)
+  })
   socket.on('search', x => {
     emitter.emit('suggestion', x)
   })
@@ -52,7 +55,7 @@ function mainView (state, emit) {
         <div class=dropdown-menu
           style='${state.displaySuggestions ? 'display: block;' : 'display: hidden;'} width: 92.3%;'>
           ${state.suggestions.map((x, i) => html`
-            <button class=dropdown-item onclick=${selected.bind(null, i)}>${x}</button>
+            <button onclick=${selected.bind(null, i)} class=dropdown-item>${x}</button>
           `)}
         </div>
 
@@ -67,7 +70,7 @@ function mainView (state, emit) {
             return html`<li id=${window.Symbol()}
               class='list-group-item ${!node.flags.online ? 'list-group-item-danger' : ''}'
               draggable=true
-              ondragstart=${pick.bind(null, i)}
+              ondragstart=${drag.bind(null, i)}
               ondrop=${drop.bind(null, i)}
               ondragover=${x => false}
             >
@@ -93,7 +96,7 @@ function mainView (state, emit) {
 </body>`
 
   function hideSuggestions () {
-    emit('toggleSuggestions', false)
+    setTimeout(x => emit('toggleSuggestions', false), 300)
   }
 
   function showSuggestions () {
@@ -101,12 +104,12 @@ function mainView (state, emit) {
     if (input.length >= minSearchLengh) emit('toggleSuggestions', true)
   }
 
-  function selected (i) {
-    let selection = document.querySelectorAll('header > div > a')[i].value
-    console.log('selection', selection)
+  function selected (i) { // put selection into input field
+    let selection = document.querySelectorAll('header > div > button')[i].innerHTML
+    document.querySelectorAll('header > input')[0].value = selection
   }
 
-  function search ({keyCode}) {
+  function search ({keyCode}) { // google instant style
     let newInput = String.fromCharCode(keyCode)
     let previousInput = document.querySelectorAll('header > input')[0].value
     let search = previousInput + newInput
@@ -119,7 +122,7 @@ function mainView (state, emit) {
     socket.emit('search', search)
   }
 
-  function pick (from, e) {
+  function drag (from, e) {
     e.dataTransfer.setData('text/plain', from)
   }
   function drop (to, e) {
@@ -129,8 +132,9 @@ function mainView (state, emit) {
   }
 
   function add () {
-    let id = document.querySelector('header input').value
-    emit('add', id)
+    let input = document.querySelector('header input').value
+    console.log('socket emit: getMac', input)
+    socket.emit('getMac', input)
   }
   function remove (i) {
     emit('remove', i)

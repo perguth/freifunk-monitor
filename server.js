@@ -6,19 +6,20 @@ let fetch = require('node-fetch')
 let PORT = process.env.PORT || 9000
 let https = require('https')
 let fs = require('fs')
+let memoize = require('fast-memoize')
 
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
 let minSearchLengh = 5
 let state = {}
+let server
 nodeStore()
 
 // express setup
 let app = express()
 app.use('/assets', express.static('assets'))
-let server
 
-// http(s) server
+// server setup
 if (!process.env.CERT) {
   server = app.listen(PORT, x => { console.log(`HTTP server on :${PORT}`) })
 } else {
@@ -34,12 +35,24 @@ if (!process.env.CERT) {
 
 // socket.io
 let io = require('socket.io')(server)
+let getMac = memoize(lookup => {
+  let res
+  res = state.names[lookup]
+  if (res) return res
+  res = state.nodes[lookup] && lookup
+  return res
+})
 io.sockets.on('connection', function (socket) {
-  socket.on('search', req => {
-    if (req.length < minSearchLengh) return
+  socket.on('getMac', lookup => {
+    console.log('socket on: getMac', lookup)
+    socket.emit('getMac', getMac(lookup))
+  })
+  socket.on('search', x => {
+    console.log('socket on: search', x)
+    if (x.length < minSearchLengh) return
     let results = {
-      names: Object.keys(state.names).filter(name => name.includes(req)),
-      macs: Object.keys(state.nodes).filter(mac => mac.includes(req))
+      names: Object.keys(state.names).filter(name => name.includes(x)),
+      macs: Object.keys(state.nodes).filter(mac => mac.includes(x))
     }
     socket.emit('search', results)
   })
