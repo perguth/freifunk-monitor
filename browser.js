@@ -104,8 +104,8 @@ function mainView (state, emit) {
               ondragover=${x => false}
             >
               <b>${node.name}</b> (${id}),
-              ${node.flags.online ? 'online' : 'offline'},
-              ${node.clientcount} clients
+              ${node.flags.online ? 'online,' : 'offline'}
+              ${node.flags.online ? node.clientcount + ' clients' : ''}
               <button
                 onclick=${remove.bind(null, i)}
                 class='close float-right'
