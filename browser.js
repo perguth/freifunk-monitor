@@ -21,6 +21,18 @@ app.mount('body')
 window.Notification.requestPermission()
 function notify (msg) { new window.Notification(msg) } // eslint-disable-line
 
+window.setTimeout(x => {
+  document.querySelectorAll('input[type=file]')[0].addEventListener('change', e => {
+    let file = e.target.files[0]
+    let reader = new window.FileReader()
+    reader.onloadend = e => {
+      window.localStorage.setItem(storageName, e.target.result)
+      window.location.reload()
+    }
+    reader.readAsText(file)
+  }, false)
+}, 300)
+
 app.use((state, emitter) => {
   socket.on('getId', id => {
     emitter.emit('add', id)
@@ -123,11 +135,14 @@ function mainView (state, emit) {
           has the source. <a href=${
             'data:application/octet-stream;charset=utf-8;base64,' +
             window.btoa(window.localStorage.getItem(storageName))
-          } download=ffs-monitor.localStorage.txt>Export</a> or <a onclick=${importData}>import</a> data.
+          } download=ffs-monitor.localStorage.txt>Export</a> or <a onclick=${
+            x => document.querySelectorAll('input[type=file]')[0].click()
+          } href=#>import</a> data.
         </small>
       </footer>
       <br>
     </div>
+    <input type=file style='display: none;'>
   </body>`
 
   function importData (data) {
