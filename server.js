@@ -7,6 +7,7 @@ let PORT = process.env.PORT || 9000
 
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
+let minSearchLengh = 5
 let state = {}
 nodeStore()
 
@@ -18,7 +19,7 @@ let server = app.listen(PORT, x => { console.log(`running on :${PORT}`) })
 let io = require('socket.io')(server)
 io.sockets.on('connection', function (socket) {
   socket.on('search', req => {
-    if (req.length < 3) return
+    if (req.length < minSearchLengh) return
     let results = {
       names: Object.keys(state.names).filter(name => name.includes(req)),
       macs: Object.keys(state.nodes).filter(mac => mac.includes(req))

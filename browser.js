@@ -1,10 +1,12 @@
 let choo = require('choo')
 let html = require('choo/html')
+let Nanocomponent = require('nanocomponent')
 let persist = require('choo-persist')
 let socketIo = require('socket.io-client')
 
 let restUrl = 'https://ffs-monitor.perguth.de/'
 let wsUrl = 'http://localhost:9000'
+let minSearchLengh = 5
 let socket = socketIo(wsUrl)
 let app = choo()
 app.use(persist({name: 'ffs-monitor-' + require('./package.json').version}))
@@ -25,15 +27,32 @@ app.use((state, emitter) => {
   emitter.emit('updateAll')
 })
 
+let Input = class Component extends Nanocomponent {
+  constructor () {
+    super()
+    this.state = {}
+  }
+  createElement (state) {
+    this.state = state
+    return html`
+      <input onkeypress=${state.onkeypress} onfocus=${state.onfocus} onblur=${state.onblur}
+      class=form-control type=text placeholder='mac address' data-toggle=dropdown>
+    `
+  }
+  update (x) {}
+}
+let input = new Input()
+
 function mainView (state, emit) {
   return html`<body><br>
     <div class=container>
       <header class='row input-group dropdown show'>
-        <input onkeypress=${search} class=form-control type=text placeholder='mac address' data-toggle=dropdown>
+        ${input.render({onkeypress: search, onfocus: showSuggestions, onblur: hideSuggestions})}
 
-        <div class=dropdown-menu>
+        <div class=dropdown-menu
+          style='${state.displaySuggestions ? 'display: block;' : 'display: hidden;'} width: 92.3%;'>
           ${state.suggestions.map((x, i) => html`
-            <a onclick=${select.bind(null, i)} class=dropdown-item href=#>${x}</a>
+            <button class=dropdown-item onclick=${selected.bind(null, i)}>${x}</button>
           `)}
         </div>
 
@@ -73,12 +92,30 @@ function mainView (state, emit) {
     </div>
 </body>`
 
-  function select () {}
+  function hideSuggestions () {
+    emit('toggleSuggestions', false)
+  }
+
+  function showSuggestions () {
+    let input = document.querySelectorAll('header > input')[0].value
+    if (input.length >= minSearchLengh) emit('toggleSuggestions', true)
+  }
+
+  function selected (i) {
+    let selection = document.querySelectorAll('header > div > a')[i].value
+    console.log('selection', selection)
+  }
 
   function search ({keyCode}) {
     let newInput = String.fromCharCode(keyCode)
     let previousInput = document.querySelectorAll('header > input')[0].value
     let search = previousInput + newInput
+    if (search.length < minSearchLengh) {
+      emit('toggleSuggestions', false)
+      return
+    }
+    emit('toggleSuggestions', true)
+    emit('inputChange', search)
     socket.emit('search', search)
   }
 
@@ -102,9 +139,19 @@ function mainView (state, emit) {
 
 function uiStore (state, emitter) {
   state.suggestions = state.suggestions || []
+  state.input = state.input || ''
+  state.displaySuggestions = false
 
+  emitter.on('toggleSuggestions', x => {
+    state.displaySuggestions = x
+    emitter.emit('render')
+  })
+  emitter.on('inputChange', x => {
+    state.input = x
+    emitter.emit('render')
+  })
   emitter.on('suggestion', x => {
-    state.suggestions = [...x.macs, ...x.names]
+    state.suggestions = [...x.names, ...x.macs]
     emitter.emit('render')
   })
 }
