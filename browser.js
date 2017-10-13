@@ -56,7 +56,7 @@ function mainView (state, emit) {
     if (!node.flags) return
     nodeCount += +node.flags.online
     clientCount += +node.clientcount
-  })
+  }, 0)
   return html`<body><br>
     <div class=container><header class=row>
         <div class='col input-group dropdown show'>
