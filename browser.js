@@ -48,13 +48,13 @@ let Input = class Component extends Nanocomponent {
 let input = new Input()
 
 function mainView (state, emit) {
-  let clientCount = 0
   let nodeCount = 0
+  let clientCount = 0
   state.ids.reduce((_, id) => {
     let node = state.nodes[id]
     if (!node.flags) return
-    clientCount += +node.flags.online
-    nodeCount += +node.clientcount
+    nodeCount += +node.flags.online
+    clientCount += +node.clientcount
   })
   return html`<body><br>
     <div class=container><header class=row>
@@ -72,7 +72,12 @@ function mainView (state, emit) {
         </div>
 
         <span class=input-group-btn>
-          <button onclick=${add} class='btn btn-secondary'>add</button>
+          <button onclick=${add} class='btn
+            ${document.querySelectorAll('header input')[0] &&
+            document.querySelectorAll('header input')[0].value
+                ? 'btn-primary'
+                : 'btn-secondary'}
+          '>add</button>
         </span>
       </div></header><br>
       <div class=row><div class=col style='text-align: center;'>
@@ -89,7 +94,10 @@ function mainView (state, emit) {
             let node = state.nodes[id]
             if (!node.flags) return
             return html`<li id=${window.Symbol()}
-              class='list-group-item ${!node.flags.online ? 'list-group-item-danger' : ''}'
+              class='list-group-item
+              ${!node.flags.online ? 'list-group-item-dark' : ''}
+              ${node.flags.online && node.clientcount === 0 ? 'list-group-item-info' : ''}
+              ${node.flags.online && node.clientcount > 0 ? 'list-group-item-warning' : ''}'
               draggable=true
               ondragstart=${drag.bind(null, i)}
               ondrop=${drop.bind(null, i)}
