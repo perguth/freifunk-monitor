@@ -11,6 +11,7 @@ let cors = require('cors')
 
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
+let minTimeout = 1000 * 60 * 15
 let minSearchLengh = 5
 let state = {}
 let server
@@ -59,7 +60,6 @@ io.sockets.on('connection', function (socket) {
 })
 
 // backoff setup
-let minTimeout = 1000 * 60 * 15
 state.lastPull = Date.now()
 backoff = backoff.fibonacci({
   initialDelay: minTimeout,
@@ -92,8 +92,10 @@ function nodeStore () {
 // routes & middleware
 app.use((req, res, next) => {
   if (state.lastPull < (Date.now() - minTimeout)) {
+    debug('received request, resetting backoff')
     state.lastPull = Date.now()
     backoff.reset()
+    bus.emit('updateAll')
   }
   next()
 })
