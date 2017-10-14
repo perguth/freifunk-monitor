@@ -19,7 +19,12 @@ app.route('*', mainView)
 app.mount('body')
 
 window.Notification.requestPermission()
-function notify (msg) { new window.Notification(msg) } // eslint-disable-line
+function notify (msg) {
+  new window.Notification('ffs-monitor', { // eslint-disable-line
+    body: msg,
+    sticky: true
+  })
+}
 
 window.setTimeout(x => {
   document.querySelectorAll('input[type=file]')[0].addEventListener('change', e => {
