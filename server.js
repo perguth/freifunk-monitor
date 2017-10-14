@@ -66,7 +66,7 @@ backoff = backoff.fibonacci({
   maxDelay: 1000 * 60 * 60 * 24 * 3
 })
 backoff.on('ready', (number, delay) => {
-  debug(`calling updateAll, try ${number} after ${delay}ms backoff`)
+  debug(`backoff: calling updateAll, retry ${number + 1} after ${delay}ms backoff`)
   bus.emit('updateAll')
 })
 bus.emit('updateAll')
