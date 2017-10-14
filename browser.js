@@ -22,6 +22,7 @@ window.Notification.requestPermission()
 function notify (msg) {
   new window.Notification('ffs-monitor', { // eslint-disable-line
     body: msg,
+    icon: 'assets/ffs-logo-128.png',
     sticky: true
   })
 }
