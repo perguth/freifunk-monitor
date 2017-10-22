@@ -122,7 +122,7 @@ function mainView (state, emit) {
               ondrop=${drop.bind(null, i)}
               ondragover=${x => false}
             >
-              <b>${node.name}</b> (${id}),
+              <b>${node.name}</b> (<a href='${restUrl}/v1/id/${id}'>${id}</a>),
               ${node.flags.online ? 'online,' : 'offline'}
               ${node.flags.online ? node.clientcount + ' clients' : ''}
               <button
