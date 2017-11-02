@@ -137,13 +137,15 @@ function mainView (state, emit) {
       <footer>
         <br>
         <small style='display: block; text-align: center; color: grey;'>
-          <code>v${require('./package.json').version}</code> <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
-          has the source. <a href=${
+          <a href=${
             'data:application/octet-stream;charset=utf-8;base64,' +
             window.btoa(window.localStorage.getItem(storageName))
           } download=ffs-monitor.localStorage.txt>Export</a> or <a onclick=${
             x => document.querySelectorAll('input[type=file]')[0].click()
           } href=#>import</a> data.
+          <br>
+          <code>v${require('./package.json').version}</code> <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
+          has the source.
         </small>
       </footer>
       <br>
