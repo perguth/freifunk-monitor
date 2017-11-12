@@ -5,8 +5,8 @@ let persist = require('choo-persist')
 let socketIo = require('socket.io-client')
 let moment = require('moment')
 
-let restUrl = process.env.REST_URL
-let wsUrl = process.env.WS_URL
+let restUrl = process.env.REST_URL || 'http://localhost:9000'
+let wsUrl = process.env.WS_URL || restUrl
 let minSearchLengh = 5
 let pollingTime = 1000 * 60 * 15
 let socket = socketIo(wsUrl)
@@ -137,15 +137,13 @@ function mainView (state, emit) {
       <footer>
         <br>
         <small style='display: block; text-align: center; color: grey;'>
-          <a href=${
+          <code>v${require('./package.json').version}</code> <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
+          has the source. <a href=${
             'data:application/octet-stream;charset=utf-8;base64,' +
             window.btoa(window.localStorage.getItem(storageName))
           } download=ffs-monitor.localStorage.txt>Export</a> or <a onclick=${
             x => document.querySelectorAll('input[type=file]')[0].click()
           } href=#>import</a> data.
-          <br>
-          <code>v${require('./package.json').version}</code> <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
-          has the source.
         </small>
       </footer>
       <br>
