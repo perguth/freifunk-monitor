@@ -2,9 +2,10 @@ let choo = require('choo')
 let html = require('choo/html')
 let Nanocomponent = require('nanocomponent')
 let persist = require('choo-persist')
+let Signalhub = require('signalhub')
 let socketIo = require('socket.io-client')
+let Swarm = require('secure-webrtc-swarm')
 let moment = require('moment')
-let WebrtcSwarm = require('secure-webrtc-swarm')
 
 let restUrl = process.env.REST_URL || 'http://localhost:9000'
 let wsUrl = process.env.WS_URL || restUrl
@@ -13,7 +14,10 @@ let pollingTime = 1000 * 60 * 15
 let socket = socketIo(wsUrl)
 let app = choo()
 let storageName = 'ffs-monitor-v' + require('./package.json').version[0]
-app.use(persist({name: storageName}))
+app.use(persist({
+  name: storageName,
+  filter: state => Object.assign({}, state, {swarm: null})
+}))
 app.use(uiStore)
 app.use(nodeStore)
 app.route('*', mainView)
@@ -41,6 +45,8 @@ window.setTimeout(x => {
 }, 300)
 
 app.use((state, emitter) => {
+  if (state.sharing) startSharing(state, emitter)
+
   socket.on('getId', id => {
     emitter.emit('add', id)
   })
@@ -89,14 +95,15 @@ function mainView (state, emit) {
           </div>
           <div class=modal-body>
             <div class=form-group>
-              <label>Sharing link</label> <span class='badge badge-success'>enabled</span>
-              <span class=float-right><a href=# onclick=${function () {
-                document.querySelectorAll('.modal').forEach(elem => {
-                  this.innerHTML = 'enable'
-                })
-              }}>• disable</a></span>
+              <label>Sharing link</label> <span class='badge badge-${state.sharing ? 'success' : 'dark'}'>
+                ${state.sharing ? 'enabled' : 'disabled'}
+              </span>
+              <span class=float-right><a href=# onclick=${toggleSharing}>
+                • ${state.sharing ? 'disable' : 'enable'}
+              </a></span>
               <div class=input-group>
-                <input type=text class=form-control>
+                <input type=text class=form-control ${state.sharing ? '' : 'disabled'}
+                  value=${window.location.origin + window.location.pathname}#${state.sharingKey || ''}>
                 <span class=input-group-btn>
                   <button class='btn btn-light clippy' data-clipboard-target=#connection-id>
                     <img src=assets/clippy.svg>
@@ -187,6 +194,12 @@ function mainView (state, emit) {
     <input type=file style='display: none;'>
   </body>`
 
+  function toggleSharing () {
+    emit('toggleSharing')
+    if (state.sharing) startSharing(state, emit)
+    else state.swarm.close()
+  }
+
   function displayModal (bool) {
     document.querySelectorAll('.modal').forEach(elem => {
       elem.style.display = bool ? 'block' : 'none'
@@ -256,6 +269,24 @@ function uiStore (state, emitter) {
     state.suggestions = [...x.names, ...x.ids]
     emitter.emit('render')
   })
+  emitter.on('toggleSharing', x => {
+    state.sharing = !state.sharing
+    emitter.emit('render')
+  })
+  emitter.on('startedSharing', x => {
+    Object.assign(state, x)
+    emitter.emit('render')
+  })
+}
+
+function startSharing (state, emit) {
+  let hub = new Signalhub(
+    `ffs-monitor-v${require('./package.json').version[0]}`,
+    ['https://signalhub.perguth.de:65300/']
+  )
+  let sharingKey = Swarm.createSecret()
+  let swarm = new Swarm(hub, {secret: sharingKey})
+  emit('startedSharing', {swarm, sharingKey})
 }
 
 function nodeStore (state, emitter) {
