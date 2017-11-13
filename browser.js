@@ -83,8 +83,8 @@ function mainView (state, emit) {
     clientCount += +node.clientcount
   }, 0)
   return html`<body>
-    <div class=modal style='display: none; z-index: 10; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: grey; opacity: 0.8;'></div>
-    <div class=modal tabindex=1 style='display: none; position: absolute; top: calc(50% - 225px); left: calc(50% - 383px);'>
+    <div class=modal style='display: none; z-index: 10; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: grey; opacity: 0.8;'></div>
+    <div class=modal tabindex=1 style='display: none; position: fixed; top: calc(50% - 225px); left: calc(50% - 383px);'>
       <div class=modal-dialog>
         <div class=modal-content>
           <div class=modal-header>
