@@ -1,4 +1,5 @@
 let choo = require('choo')
+let debug = require('debug')('ffs-monitor')
 let html = require('choo/html')
 let Nanocomponent = require('nanocomponent')
 let persist = require('choo-persist')
@@ -16,7 +17,10 @@ let app = choo()
 let storageName = 'ffs-monitor-v' + require('./package.json').version[0]
 app.use(persist({
   name: storageName,
-  filter: state => Object.assign({}, state, {swarm: null})
+  filter: state => Object.assign({}, state, {
+    swarm: null,
+    displayModal: null
+  })
 }))
 app.use(uiStore)
 app.use(nodeStore)
@@ -45,7 +49,7 @@ window.setTimeout(x => {
 }, 300)
 
 app.use((state, emitter) => {
-  if (state.sharing) startSharing(state, emitter)
+  if (state.sharing) startSharing(state)
 
   socket.on('getId', id => {
     emitter.emit('add', id)
@@ -83,14 +87,14 @@ function mainView (state, emit) {
     clientCount += +node.clientcount
   }, 0)
   return html`<body>
-    <div class=modal style='display: none; z-index: 10; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: grey; opacity: 0.8;'></div>
-    <div class=modal tabindex=1 style='display: none; position: fixed; top: calc(50% - 225px); left: calc(50% - 383px);'>
+    <div class=modal style='display: ${state.displayModal ? 'block' : 'none'}; z-index: 10; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: grey; opacity: 0.8;'></div>
+    <div class=modal tabindex=1 style='display: ${state.displayModal ? 'block' : 'none'}; position: fixed; top: calc(50% - 225px); left: calc(50% - 383px);'>
       <div class=modal-dialog>
         <div class=modal-content>
           <div class=modal-header>
             <h5 class=modal-title>Transfer state</h5>
             <button type=button class='close'>
-              <span onclick=${displayModal.bind(null, false)}>×</span>
+              <span onclick=${x => emit('toggleModal')}>×</span>
             </button>
           </div>
           <div class=modal-body>
@@ -113,7 +117,7 @@ function mainView (state, emit) {
             </div>
           </div>
           <div class=modal-footer>
-            <button class='btn btn-secondary' onclick=${displayModal.bind(null, false)}>Close</button>
+            <button class='btn btn-secondary' onclick=${x => emit('toggleModal')}>Close</button>
           </div>
         </div>
       </div>
@@ -186,7 +190,7 @@ function mainView (state, emit) {
             window.btoa(window.localStorage.getItem(storageName))
           } download=ffs-monitor.localStorage.txt>Export</a>, <a onclick=${
             x => document.querySelectorAll('input[type=file]')[0].click()
-          } href=#>import</a> or <a onclick=${displayModal.bind(null, true)} href=#>transfer</a> data.
+          } href=#>import</a> or <a onclick=${x => emit('toggleModal')} href=#>transfer</a> data.
         </small>
       </footer>
       <br>
@@ -198,12 +202,6 @@ function mainView (state, emit) {
     emit('toggleSharing')
     if (state.sharing) startSharing(state, emit)
     else state.swarm.close()
-  }
-
-  function displayModal (bool) {
-    document.querySelectorAll('.modal').forEach(elem => {
-      elem.style.display = bool ? 'block' : 'none'
-    })
   }
 
   function hideSuggestions () {
@@ -269,6 +267,10 @@ function uiStore (state, emitter) {
     state.suggestions = [...x.names, ...x.ids]
     emitter.emit('render')
   })
+  emitter.on('toggleModal', x => {
+    state.displayModal = !state.displayModal
+    emitter.emit('render')
+  })
   emitter.on('toggleSharing', x => {
     state.sharing = !state.sharing
     emitter.emit('render')
@@ -280,13 +282,35 @@ function uiStore (state, emitter) {
 }
 
 function startSharing (state, emit) {
+  let hash = window.location.hash.substr(1)
   let hub = new Signalhub(
     `ffs-monitor-v${require('./package.json').version[0]}`,
     ['https://signalhub.perguth.de:65300/']
   )
-  let sharingKey = Swarm.createSecret()
+  let sharingKey = hash || state.sharingKey || Swarm.createSecret()
   let swarm = new Swarm(hub, {secret: sharingKey})
-  emit('startedSharing', {swarm, sharingKey})
+  if (emit) emit('startedSharing', {swarm, sharingKey})
+  debug('Starting WebRTC')
+
+  swarm.on('peer', peer => {
+    debug('Peer connected')
+    if (!hash) {
+      peer.send(window.localStorage.getItem(storageName))
+    }
+    peer.on('data', data => {
+      let json = JSON.parse(data)
+      let sameList = state.ids.find(id => {
+        return json.ids.find(elem => elem.indexOf(id) === -1)
+      })
+      if (sameList) {
+        debug('Peer has the same list - skipping')
+        return
+      }
+      debug('Peer has a new list - updating')
+      window.localStorage.setItem(storageName, data.toString())
+      window.location.reload()
+    })
+  })
 }
 
 function nodeStore (state, emitter) {
