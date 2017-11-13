@@ -4,6 +4,7 @@ let Nanocomponent = require('nanocomponent')
 let persist = require('choo-persist')
 let socketIo = require('socket.io-client')
 let moment = require('moment')
+let WebrtcSwarm = require('secure-webrtc-swarm')
 
 let restUrl = process.env.REST_URL || 'http://localhost:9000'
 let wsUrl = process.env.WS_URL || restUrl
@@ -62,7 +63,7 @@ let Input = class Component extends Nanocomponent {
       class=form-control type=text placeholder='name or mac address' data-toggle=dropdown>
     `
   }
-  update (x) {}
+  update () {}
 }
 let input = new Input()
 
@@ -75,7 +76,42 @@ function mainView (state, emit) {
     nodeCount += +node.flags.online
     clientCount += +node.clientcount
   }, 0)
-  return html`<body><br>
+  return html`<body>
+    <div class=modal style='display: none; z-index: 10; position: absolute; top: 0; left: 0; width: 100%; height: 100%; background-color: grey; opacity: 0.8;'></div>
+    <div class=modal tabindex=1 style='display: none; position: absolute; top: calc(50% - 225px); left: calc(50% - 383px);'>
+      <div class=modal-dialog>
+        <div class=modal-content>
+          <div class=modal-header>
+            <h5 class=modal-title>Transfer state</h5>
+            <button type=button class='close'>
+              <span onclick=${displayModal.bind(null, false)}>×</span>
+            </button>
+          </div>
+          <div class=modal-body>
+            <div class=form-group>
+              <label>Sharing link</label> <span class='badge badge-success'>enabled</span>
+              <span class=float-right><a href=# onclick=${function () {
+                document.querySelectorAll('.modal').forEach(elem => {
+                  this.innerHTML = 'enable'
+                })
+              }}>• disable</a></span>
+              <div class=input-group>
+                <input type=text class=form-control>
+                <span class=input-group-btn>
+                  <button class='btn btn-light clippy' data-clipboard-target=#connection-id>
+                    <img src=assets/clippy.svg>
+                  </button>
+                </span>
+              </div>
+            </div>
+          </div>
+          <div class=modal-footer>
+            <button class='btn btn-secondary' onclick=${displayModal.bind(null, false)}>Close</button>
+          </div>
+        </div>
+      </div>
+    </div>
+    <br>
     <div class=container><header class=row>
         <div class='col input-group dropdown show'>
         ${input.render({onkeypress: search, onfocus: showSuggestions, onblur: hideSuggestions})}
@@ -141,15 +177,21 @@ function mainView (state, emit) {
           has the source. <a href=${
             'data:application/octet-stream;charset=utf-8;base64,' +
             window.btoa(window.localStorage.getItem(storageName))
-          } download=ffs-monitor.localStorage.txt>Export</a> or <a onclick=${
+          } download=ffs-monitor.localStorage.txt>Export</a>, <a onclick=${
             x => document.querySelectorAll('input[type=file]')[0].click()
-          } href=#>import</a> data.
+          } href=#>import</a> or <a onclick=${displayModal.bind(null, true)} href=#>transfer</a> data.
         </small>
       </footer>
       <br>
     </div>
     <input type=file style='display: none;'>
   </body>`
+
+  function displayModal (bool) {
+    document.querySelectorAll('.modal').forEach(elem => {
+      elem.style.display = bool ? 'block' : 'none'
+    })
+  }
 
   function hideSuggestions () {
     setTimeout(x => emit('toggleSuggestions', false), 300)
