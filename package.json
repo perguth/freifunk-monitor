@@ -13,10 +13,11 @@
   "browser": "browser.js",
   "scripts": {
     "test": "standard",
-    "start": "npm run browser & npm run server",
+    "start": "npm run copyFiles; npm run browser & npm run server",
     "browser": "budo --live --host localhost browser.js:bundle.js -- -t envify",
-    "build": "mkdir -p build && browserify browser.js -o build/bundle.js -t [envify purge] -t babelify --presets [es2015] && cp -r index.html assets build/ && touch build/.nojekyll",
-    "server": "nodemon server.js"
+    "build": "npm run copyFiles; mkdir -p build && browserify browser.js -o build/bundle.js -t [envify purge] -t babelify --presets [es2015] && cp -r index.html assets build/ && touch build/.nojekyll",
+    "server": "nodemon server.js",
+    "copyFiles": "cp node_modules/emailjs-tcp-socket/src/emailjs-tcp-socket-tls.js assets/; cp node_modules/emailjs-tcp-socket/src/emailjs-tcp-socket.js assets/;  browserify node_modules/emailjs-tcp-socket/src/emailjs-tcp-socket-tls-worker.js -o assets/tcp-socket-tls-worker.js; cp node_modules/node-forge/dist/forge.min.js assets/; cp node_modules/emailjs-smtp-client/src/emailjs-smtp-client-response-parser.js assets/; cp node_modules/emailjs-smtp-client/src/emailjs-smtp-client.js assets/"
   },
   "devDependencies": {
     "babel-cli": "^6.26.0",
@@ -34,12 +35,14 @@
     "choo-persist": "^3.0.2",
     "cors": "^2.8.4",
     "debug": "^3.1.0",
+    "emailjs-smtp-client": "^1.0.0",
     "envify": "^4.1.0",
     "express": "^4.16.2",
     "fast-memoize": "^2.2.8",
     "moment": "^2.19.1",
     "nanocomponent": "^6.4.2",
     "node-fetch": "^1.7.3",
+    "node-forge": "^0.7.1",
     "popper.js": "^1.12.5",
     "secure-webrtc-swarm": "^4.1.0",
     "signalhub": "^4.9.0",

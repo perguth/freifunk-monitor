@@ -28,12 +28,52 @@ app.route('*', mainView)
 app.mount('body')
 
 window.Notification.requestPermission()
-function notify (msg) {
+function notify (msg, state, test) {
+  debug('Tyring to display a system notification')
   new window.Notification('ffs-monitor', { // eslint-disable-line
     body: msg,
     icon: 'assets/ffs-logo-128.png',
     sticky: true
   })
+  if (test || (state.sendMail && state.smtp)) {
+    debug('SMTP: tryring to send a test mail')
+    let subject = `Node changed state`
+    let message = subject
+    let Smtp = window['emailjs-smtp-client']
+    let smtp = new Smtp(state.smtp.host, 587, {
+      useSecureTransport: true,
+      requireTLS: true,
+      ca: state.smtp.ca,
+      tlsWorkerPath: 'assets/tcp-socket-tls-worker.js',
+      auth: {
+        user: state.smtp.username,
+        pass: state.smtp.password
+      }
+    })
+    smtp.onerror = err => debug('SMTP: error', err)
+    smtp.ondone = bool => {
+      if (bool) {
+        debug('SMTP: sending Email failed', smtp.log.slice(-1))
+        return
+      }
+      debug('SMTP: Email successfully sent')
+      smtp.quit() // graceful
+    }
+    smtp.onready = failedRecipients => {
+      if (failedRecipients.length) debug('SMTP: recipients rejected', failedRecipients)
+      smtp.send(`Subject: ${subject}\r\n`)
+      smtp.send(`\r\n`)
+      smtp.send(message)
+      smtp.end()
+    }
+    smtp.onidle = x => {
+      console.log('connected')
+      smtp.useEnvelope({
+        from: state.smtp.from || state.smtp.username,
+        to: `[${state.smtp.to}]`
+      })
+    }
+  }
 }
 
 window.setTimeout(x => {
@@ -88,12 +128,12 @@ function mainView (state, emit) {
   }, 0)
   return html`<body>
     <div class=modal style='display: ${state.displayModal ? 'block' : 'none'}; z-index: 10; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background-color: grey; opacity: 0.8;'></div>
-    <div class=modal tabindex=1 style='display: ${state.displayModal ? 'block' : 'none'}; position: fixed; top: calc(50% - 225px); margin: 0 auto;;'>
+    <div class=modal tabindex=1 style='display: ${state.displayModal ? 'block' : 'none'}; position: relative; margin: 0 auto;'>
       <div class=modal-dialog>
         <div class=modal-content>
           <div class=modal-header>
             <h5 class=modal-title>Transfer state</h5>
-            <button type=button class='close'>
+            <button type=button class=close>
               <span onclick=${x => emit('toggleModal')}>×</span>
             </button>
           </div>
@@ -114,10 +154,68 @@ function mainView (state, emit) {
                   </button>
                 </span>
               </div>
+              <div class=form-check>
+                <label class=form-check-label>
+                  <input type=checkbox class=form-check-input ${
+                    state.sharesmtp ? 'checked' : ''
+                  } onclick=${
+                    x => emit('toggleSmtpSharing')
+                  }> <small>Transfer SMTP credentials.</small>
+                </label>
+              </div>
+            </div>
+            <hr>
+            <div class=form-group>
+              <label>Send notification Mails</label> <span class='badge badge-${state.sendMail ? 'success' : 'dark'}'>
+                ${state.sendMail ? 'enabled' : 'disabled'}
+              </span>
+              <span class=float-right><a href=# onclick=${x => emit('toggleSendMail')}>
+                • ${state.sendMail ? 'disable' : 'enable'}
+              </a></span>
+              <p style='margin-bottom: 4px;'><small>
+                This website can send a notification email when a node goes offline or comes online again.
+              </small></p>
+              <input id=smtp-host type=text class=form-control placeholder='SMTP server' style='margin-bottom: 4px;' value=${
+                state.smtp ? state.smtp.host : ''
+              }>
+              <input id=smtp-username type=text class=form-control placeholder='Username' style='margin-bottom: 4px;' value=${
+                state.smtp ? state.smtp.username : ''
+              }>
+              <input id=smtp-password type=password class=form-control placeholder='Password' style='margin-bottom: 4px;' value=${
+                state.smtp && state.smtp.password
+                  ? (new Array(state.smtp.password.length)).fill('x') : ''
+              }>
+              <input id=smtp-to type=text class=form-control placeholder='Recipients (comma separated)' style='margin-bottom: 4px;' value=${
+                state.smtp ? state.smtp.to : ''
+              }>
+              <input id=smtp-from type=text class=form-control placeholder='From (= username if left blank)' style='margin-bottom: 4px;' value=${
+                state.smtp ? state.smtp.from : ''
+              }>            
+              <textarea id=smtp-ca class=form-control rows=3 placeholder='CA' style='margin-bottom: 4px;'>
+                ${state.smtp ? state.smtp.ca : ''}
+              </textarea>
+              <small class='form-text text-muted'>Emails are sent directly from your browser. SMTP encryption (StartTLS) with standard port is enforced.</small>
+              <span class=float-right>
+                <button class='btn btn-info' onclick=${
+                  notify.bind(null, 'SMTP: trying to send a test mail', state, true)
+                }>Send a test Email</button>              
+              </span>
             </div>
           </div>
           <div class=modal-footer>
-            <button class='btn btn-secondary' onclick=${x => emit('toggleModal')}>Close</button>
+            <button class='btn btn-secondary' onclick=${x => emit('toggleSendMail')}>Discard</button>
+            <button class='btn btn-primary' onclick=${x => {
+              emit('toggleModal')
+              let smtpCredentials = {
+                host: document.getElementById('smtp-host').value,
+                username: document.getElementById('smtp-username').value,
+                password: document.getElementById('smtp-password').value,
+                to: document.getElementById('smtp-to').value,
+                from: document.getElementById('smtp-from').value,
+                ca: document.getElementById('smtp-ca').value
+              }
+              emit('saveSmtpCredentials', smtpCredentials)
+            }}>Save</button>
           </div>
         </div>
       </div>
@@ -254,6 +352,7 @@ function uiStore (state, emitter) {
   state.suggestions = state.suggestions || []
   state.input = state.input || ''
   state.displaySuggestions = false
+  let tmpSmtp = {}
 
   emitter.on('toggleSuggestions', x => {
     state.displaySuggestions = x
@@ -279,6 +378,29 @@ function uiStore (state, emitter) {
     Object.assign(state, x)
     emitter.emit('render')
   })
+  emitter.on('toggleSmtpSharing', x => {
+    state.shareSmtp = !state.shareSmtp
+    emitter.emit('render')
+  })
+  emitter.on('saveSmtpCredentials', credentials => {
+    if (!state.smtp) state.smtp = {}
+    for (let prop in credentials) {
+      let value = credentials[prop]
+      if (value || value !== 'undefined') state.smtp[prop] = value
+      else state.smtp[prop] = ''
+    }
+  })
+  emitter.on('toggleSendMail', x => {
+    state.sendMail = !state.sendMail
+    emitter.emit('render')
+  })
+  emitter.on('toggleSmtpPersistence', x => {
+    if (!state.smtp || state.smtp === {}) {
+      state.smtp = tmpSmtp
+    }
+    tmpSmtp = state.smtp
+    state.smtp = {}
+  })
 }
 
 function startSharing (state, emit) {
@@ -295,7 +417,10 @@ function startSharing (state, emit) {
   swarm.on('peer', peer => {
     debug('Peer connected')
     if (!hash) {
+      let shareSmtp = state.shareSmtp
+      if (!shareSmtp) emit('toggleSmtpPersistence')
       peer.send(window.localStorage.getItem(storageName))
+      if (!shareSmtp) emit('toggleSmtpPersistence')
     }
     peer.on('data', data => {
       let json = JSON.parse(data)
@@ -336,10 +461,10 @@ function nodeStore (state, emitter) {
       res.json().then(node => {
         state.timestamp = node.timestamp
         if (!state.nodes[id].online && node.online) {
-          notify(`Node ${node.name} came online!`)
+          notify(`Node ${node.name} came online!`, state)
         }
         if (state.nodes[id].online && !node.online) {
-          notify(`Node ${node.name} went offline!`)
+          notify(`Node ${node.name} went offline!`, state)
         }
         state.nodes[id] = node
         emitter.emit('render')
