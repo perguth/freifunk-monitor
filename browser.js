@@ -1,5 +1,6 @@
 let choo = require('choo')
 let debug = require('debug')('ffs-monitor')
+let email = require('apostle.io')
 let html = require('choo/html')
 let Nanocomponent = require('nanocomponent')
 let persist = require('choo-persist')
@@ -10,11 +11,14 @@ let moment = require('moment')
 
 let restUrl = process.env.REST_URL || 'http://localhost:9000'
 let wsUrl = process.env.WS_URL || restUrl
+let apostleKey = process.env.APOSTLE_KEY || 'd867ceb476158bda34e72c0c5e26c2dde0039d9d'
+
 let minSearchLengh = 5
 let pollingTime = 1000 * 60 * 15
 let socket = socketIo(wsUrl)
 let app = choo()
 let storageName = 'ffs-monitor-v' + require('./package.json').version[0]
+
 app.use(persist({
   name: storageName,
   filter: state => Object.assign({}, state, {
@@ -28,51 +32,24 @@ app.route('*', mainView)
 app.mount('body')
 
 window.Notification.requestPermission()
-function notify (msg, state, test) {
+function notify (msg, state, testMail) {
   debug('Tyring to display a system notification')
   new window.Notification('ffs-monitor', { // eslint-disable-line
     body: msg,
     icon: 'assets/ffs-logo-128.png',
     sticky: true
   })
-  if (test || (state.sendMail && state.smtp)) {
-    debug('SMTP: tryring to send a test mail')
-    let subject = `Node changed state`
-    let message = subject
-    let Smtp = window['emailjs-smtp-client']
-    let smtp = new Smtp(state.smtp.host, 587, {
-      useSecureTransport: true,
-      requireTLS: true,
-      ca: state.smtp.ca,
-      tlsWorkerPath: 'assets/tcp-socket-tls-worker.js',
-      auth: {
-        user: state.smtp.username,
-        pass: state.smtp.password
+  if (state.sendMail || testMail) {
+    email.domainKey = apostleKey
+    email.deliver('node-changes-state', {
+      email: state.mailto,
+      node: {
+        id: 'ec:08:6b:f7:d4:ae',
+        name: 'ffs-aleppo-kiefer'
       }
+    }).then(x => debug('Sent test mail'), err => {
+      debug('Sending mail failed', err)
     })
-    smtp.onerror = err => debug('SMTP: error', err)
-    smtp.ondone = bool => {
-      if (bool) {
-        debug('SMTP: sending Email failed', smtp.log.slice(-1))
-        return
-      }
-      debug('SMTP: Email successfully sent')
-      smtp.quit() // graceful
-    }
-    smtp.onready = failedRecipients => {
-      if (failedRecipients.length) debug('SMTP: recipients rejected', failedRecipients)
-      smtp.send(`Subject: ${subject}\r\n`)
-      smtp.send(`\r\n`)
-      smtp.send(message)
-      smtp.end()
-    }
-    smtp.onidle = x => {
-      console.log('connected')
-      smtp.useEnvelope({
-        from: state.smtp.from || state.smtp.username,
-        to: `[${state.smtp.to}]`
-      })
-    }
   }
 }
 
@@ -132,7 +109,7 @@ function mainView (state, emit) {
       <div class=modal-dialog>
         <div class=modal-content>
           <div class=modal-header>
-            <h5 class=modal-title>Transfer state</h5>
+            <h5 class=modal-title>Settings</h5>
             <button type=button class=close>
               <span onclick=${x => emit('toggleModal')}>×</span>
             </button>
@@ -145,8 +122,16 @@ function mainView (state, emit) {
               <span class=float-right><a href=# onclick=${toggleSharing}>
                 • ${state.sharing ? 'disable' : 'enable'}
               </a></span>
-              <div class=input-group>
-                <input type=text class=form-control ${state.sharing ? '' : 'disabled'}
+              <p style='line-height: 1.2;'><small>
+                These links can grant read-only access to the list of nodes assembled on this page. The current site will be mirrored automatically as long as the sharing link is enabled. The "Send mail"-link will also enable notification emails.
+              </small></p>
+              <div class=input-group style='margin-bottom: 6px;'>
+                <div class=input-group-btn>
+                  <button type=button class='btn btn-light dropdown-toggle' style='border: 1px solid rgba(0,0,0,.15); border-right: 0;'>
+                    Just mirror
+                  </button>
+                </div>
+                <input type=url class=form-control ${state.sharing ? '' : 'disabled'}
                   value=${window.location.origin + window.location.pathname}#${state.sharingKey || ''}>
                 <span class=input-group-btn>
                   <button class='btn btn-light clippy' data-clipboard-target=#connection-id>
@@ -154,67 +139,50 @@ function mainView (state, emit) {
                   </button>
                 </span>
               </div>
-              <div class=form-check>
-                <label class=form-check-label>
-                  <input type=checkbox class=form-check-input ${
-                    state.sharesmtp ? 'checked' : ''
-                  } onclick=${
-                    x => emit('toggleSmtpSharing')
-                  }> <small>Transfer SMTP credentials.</small>
-                </label>
-              </div>
+              <input type=email class=form-control placeholder='Recipient email address' disabled>
             </div>
             <hr>
+            
             <div class=form-group>
-              <label>Send notification Mails</label> <span class='badge badge-${state.sendMail ? 'success' : 'dark'}'>
+              <label>Send notification mails</label> <span class='badge badge-${state.sendMail ? 'success' : 'dark'}'>
                 ${state.sendMail ? 'enabled' : 'disabled'}
               </span>
               <span class=float-right><a href=# onclick=${x => emit('toggleSendMail')}>
                 • ${state.sendMail ? 'disable' : 'enable'}
               </a></span>
-              <p style='margin-bottom: 4px;'><small>
-                This website can send a notification email when a node goes offline or comes online again.
+              <p style='line-height: 1.2;'><small>
+                This website can send notification emails when nodes go offline or come back online again.
               </small></p>
-              <input id=smtp-host type=text class=form-control placeholder='SMTP server' style='margin-bottom: 4px;' value=${
-                state.smtp ? state.smtp.host : ''
-              }>
-              <input id=smtp-username type=text class=form-control placeholder='Username' style='margin-bottom: 4px;' value=${
-                state.smtp ? state.smtp.username : ''
-              }>
-              <input id=smtp-password type=password class=form-control placeholder='Password' style='margin-bottom: 4px;' value=${
-                state.smtp && state.smtp.password
-                  ? (new Array(state.smtp.password.length)).fill('x') : ''
-              }>
-              <input id=smtp-to type=text class=form-control placeholder='Recipients (comma separated)' style='margin-bottom: 4px;' value=${
-                state.smtp ? state.smtp.to : ''
-              }>
-              <input id=smtp-from type=text class=form-control placeholder='From (= username if left blank)' style='margin-bottom: 4px;' value=${
-                state.smtp ? state.smtp.from : ''
-              }>            
-              <textarea id=smtp-ca class=form-control rows=3 placeholder='CA' style='margin-bottom: 4px;'>
-                ${state.smtp ? state.smtp.ca : ''}
-              </textarea>
-              <small class='form-text text-muted'>Emails are sent directly from your browser. SMTP encryption (StartTLS) with standard port is enforced.</small>
-              <span class=float-right>
-                <button class='btn btn-info' onclick=${
-                  notify.bind(null, 'SMTP: trying to send a test mail', state, true)
-                }>Send a test Email</button>              
+              <div class="input-group">
+                <input id=mailto type=email class=form-control placeholder='Recipient email address' value=${state.mailto || ''}>
+                <span class="input-group-btn">
+                  <button class="btn btn-light" type="button" onclick=${x => {
+                    notify('Trying to send a test mail', state, true)
+                    emit('saveMailto', document.getElementById('mailto').value)
+                  }} style='border: 1px solid rgba(0,0,0,.15);'>
+                    Send a test email
+                  </button>
+                </span>
+              </div>
+            </div>
+            <hr>
+
+            <div class=form-group>
+              <label>NodeJS offloader</label> <span class='badge badge-${state.sharing ? 'success' : 'dark'}'>
+                ${state.sharing ? 'connected' : 'disconnected'}
               </span>
+              <p style='line-height: 1.2;'><small>
+                Let a <a href=#>NodeJS offloader</a> do the monitoring and sending of notification emails. It will automatically mirror the node list from this page.
+              </small></p>
+              <input type=url class=form-control placeholder='Your API key' style='margin-bottom: 6px;'>
+              <input type=email class=form-control placeholder='Recipient email address'>
             </div>
           </div>
           <div class=modal-footer>
             <button class='btn btn-secondary' onclick=${x => emit('toggleSendMail')}>Discard</button>
             <button class='btn btn-primary' onclick=${x => {
               emit('toggleModal')
-              let smtpCredentials = {
-                host: document.getElementById('smtp-host').value,
-                username: document.getElementById('smtp-username').value,
-                password: document.getElementById('smtp-password').value,
-                to: document.getElementById('smtp-to').value,
-                from: document.getElementById('smtp-from').value,
-                ca: document.getElementById('smtp-ca').value
-              }
-              emit('saveSmtpCredentials', smtpCredentials)
+              emit('saveMailto', document.getElementById('mailto').value)
             }}>Save</button>
           </div>
         </div>
@@ -352,7 +320,7 @@ function uiStore (state, emitter) {
   state.suggestions = state.suggestions || []
   state.input = state.input || ''
   state.displaySuggestions = false
-  let tmpSmtp = {}
+  // let tmpSmtp = {}
 
   emitter.on('toggleSuggestions', x => {
     state.displaySuggestions = x
@@ -378,28 +346,23 @@ function uiStore (state, emitter) {
     Object.assign(state, x)
     emitter.emit('render')
   })
-  emitter.on('toggleSmtpSharing', x => {
-    state.shareSmtp = !state.shareSmtp
+  emitter.on('toggleRemoteMailing', x => {
+    state.remoteMailing = !state.remoteMailing
     emitter.emit('render')
   })
-  emitter.on('saveSmtpCredentials', credentials => {
-    if (!state.smtp) state.smtp = {}
-    for (let prop in credentials) {
-      let value = credentials[prop]
-      if (value || value !== 'undefined') state.smtp[prop] = value
-      else state.smtp[prop] = ''
-    }
+  emitter.on('saveMailto', x => {
+    state.mailto = x
   })
   emitter.on('toggleSendMail', x => {
     state.sendMail = !state.sendMail
     emitter.emit('render')
   })
   emitter.on('toggleSmtpPersistence', x => {
-    if (!state.smtp || state.smtp === {}) {
-      state.smtp = tmpSmtp
-    }
-    tmpSmtp = state.smtp
-    state.smtp = {}
+    // if (!state.smtp || state.smtp === {}) {
+    //   state.smtp = tmpSmtp
+    // }
+    // tmpSmtp = state.smtp
+    // state.smtp = {}
   })
 }
 

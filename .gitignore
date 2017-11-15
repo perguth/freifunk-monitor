@@ -1,7 +1,4 @@
 build
-assets/forge.min.js
-assets/tcp-*
-assets/emailjs-*
 
 # Logs
 logs
