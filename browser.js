@@ -122,8 +122,8 @@ function mainView (state, emit) {
               <span class=float-right><a href=# onclick=${toggleSharing}>
                 • ${state.sharing ? 'disable' : 'enable'}
               </a></span>
-              <p style='line-height: 1.2;'><small>
-                These links can grant read-only access to the list of nodes assembled on this page. The current site will be mirrored automatically as long as the sharing link is enabled. The "Send mail"-link will also enable notification emails.
+              <p style='line-height: 1.2; text-align: justify;'><small>
+                These links can grant read-only access to the list of nodes assembled on this page. The current site will be mirrored automatically as long as the sharing link is enabled and the page remains open. The "Send mail"-link will also enable notification emails.
               </small></p>
               <div class=input-group style='margin-bottom: 6px;'>
                 <div class=input-group-btn>
