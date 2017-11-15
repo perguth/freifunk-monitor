@@ -211,15 +211,18 @@ function mainView (state, emit) {
                 : 'btn-secondary'}
           '>add</button>
         </span>
-      </div></header><br>
-      <div class=row><div class=col style='text-align: center;'>
-        <i style='color: grey'>
-          last update <b>${moment(state.timestamp).fromNow()}</b> -
-          overall <b>${nodeCount} of ${state.ids.length} nodes online</b>
-          serving <b>${clientCount} client${clientCount !== 1 ? 's' : ''}</b>
-        </i>
-      </div></div>
-      <section class=row><div class=col>
+      </div></header>
+      <div class=row style='text-align: center; display: ${nodeCount ? 'block' : 'none'};'>
+        <br>
+        <div class=col>
+          <i style='color: grey'>
+            last update <b>${moment(state.timestamp).fromNow()}</b> -
+            overall <b>${nodeCount} of ${state.ids.length} nodes online</b>
+            serving <b>${clientCount} client${clientCount !== 1 ? 's' : ''}</b>
+          </i>
+        </div>
+      </div>
+      <section class=row  style='text-align: center; display: ${nodeCount ? 'block' : 'none'};'><div class=col>
         <br>
         <ul class=list-group>
           ${state.ids.map((id, i) => {
@@ -246,9 +249,9 @@ function mainView (state, emit) {
             </li>`
           })}
         </ul>
-      </div></section>
-      <footer>
         <br>
+      </div></section>
+      <footer style='margin-top: 8px;'>
         <small style='display: block; text-align: center; color: grey;'>
           <code>v${require('./package.json').version}</code> <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
           has the source. <a href=${
