@@ -31,6 +31,7 @@
     "backoff": "^2.5.0",
     "bootstrap": "^3.3.7",
     "choo": "^6.4.1",
+    "choo-devtools": "^2.2.0",
     "choo-log": "^7.2.1",
     "choo-persist": "^3.0.2",
     "cors": "^2.8.4",

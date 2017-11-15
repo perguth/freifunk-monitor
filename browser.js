@@ -1,5 +1,6 @@
 let choo = require('choo')
 let debug = require('debug')('ffs-monitor')
+let devtools = require('choo-devtools')
 let email = require('apostle.io')
 let html = require('choo/html')
 let Nanocomponent = require('nanocomponent')
@@ -16,9 +17,12 @@ let apostleKey = process.env.APOSTLE_KEY || 'd867ceb476158bda34e72c0c5e26c2dde00
 let minSearchLengh = 5
 let pollingTime = 1000 * 60 * 15
 let socket = socketIo(wsUrl)
-let app = choo()
 let storageName = 'ffs-monitor-v' + require('./package.json').version[0]
 
+let app = choo()
+if (process.env.NODE_ENV !== 'production') {
+  app.use(devtools())
+}
 app.use(persist({
   name: storageName,
   filter: state => Object.assign({}, state, {
@@ -378,7 +382,6 @@ function startSharing (state, emit) {
   let sharingKey = hash || state.sharingKey || Swarm.createSecret()
   let swarm = new Swarm(hub, {secret: sharingKey})
   if (emit) emit('startedSharing', {swarm, sharingKey})
-  debug('Starting WebRTC')
 
   swarm.on('peer', peer => {
     debug('Peer connected')
