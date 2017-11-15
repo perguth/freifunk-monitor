@@ -142,6 +142,18 @@ function mainView (state, emit) {
               <input type=email class=form-control placeholder='Recipient email address' disabled>
             </div>
             <hr>
+
+            <div class=form-group>
+              <label>NodeJS offloader</label> <span class='badge badge-${state.sharing ? 'success' : 'dark'}'>
+                ${state.sharing ? 'connected' : 'disconnected'}
+              </span>
+              <p style='line-height: 1.2;'><small>
+                Let a regular server do the monitoring and sending of notification emails. It will automatically mirror the node list from this page.
+              </small></p>
+              <input type=url class=form-control placeholder='Your API key' style='margin-bottom: 6px;'>
+              <input type=email class=form-control placeholder='Recipient email address'>
+            </div>
+            <hr>
             
             <div class=form-group>
               <label>Send notification mails</label> <span class='badge badge-${state.sendMail ? 'success' : 'dark'}'>
@@ -151,7 +163,7 @@ function mainView (state, emit) {
                 • ${state.sendMail ? 'disable' : 'enable'}
               </a></span>
               <p style='line-height: 1.2;'><small>
-                This website can send notification emails when nodes go offline or come back online again.
+                As long as this page remains open it can send notification emails when nodes go offline or come back online.
               </small></p>
               <div class="input-group">
                 <input id=mailto type=email class=form-control placeholder='Recipient email address' value=${state.mailto || ''}>
@@ -164,18 +176,6 @@ function mainView (state, emit) {
                   </button>
                 </span>
               </div>
-            </div>
-            <hr>
-
-            <div class=form-group>
-              <label>NodeJS offloader</label> <span class='badge badge-${state.sharing ? 'success' : 'dark'}'>
-                ${state.sharing ? 'connected' : 'disconnected'}
-              </span>
-              <p style='line-height: 1.2;'><small>
-                Let a <a href=#>NodeJS offloader</a> do the monitoring and sending of notification emails. It will automatically mirror the node list from this page.
-              </small></p>
-              <input type=url class=form-control placeholder='Your API key' style='margin-bottom: 6px;'>
-              <input type=email class=form-control placeholder='Recipient email address'>
             </div>
           </div>
           <div class=modal-footer>
