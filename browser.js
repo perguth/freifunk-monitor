@@ -47,7 +47,7 @@ function notify (msg, state, testMail) {
     icon: 'assets/ffs-logo-128.png',
     sticky: true
   })
-  if (state.sendMail || testMail) {
+  if (state.sendEmail || testMail) {
     email.domainKey = apostleKey
     email.deliver('node-changes-state', {
       email: state.email.local.address,
@@ -123,6 +123,7 @@ function mainView (state, emit) {
             </button>
           </div>
           <div class=modal-body>
+            <!-- Sharing link -->
             <div class=form-group>
               <label>Sharing link</label> <span class='badge badge-${state.sharing ? 'success' : 'dark'}'>
                 ${state.sharing ? 'enabled' : 'disabled'}
@@ -136,26 +137,34 @@ function mainView (state, emit) {
               <div class=input-group style='margin-bottom: 6px;'>
                 <div class=input-group-btn>
                   <button type=button class='btn btn-light dropdown-toggle' style='border: 1px solid rgba(0,0,0,.15); border-right: 0;' onclick=${x => emit('toggleSharingLink')}>
-                    ${state.displayedLinkType === 'sendEmail' ? 'Send mails' : 'No mails'}
+                    ${state.displayedSharingLink === 'noEmails' ? 'No mails' : 'Send mails'}
                   </button>
                 </div>
                 <input type=url class=form-control ${state.sharing ? '' : 'disabled'}
-                  value=${window.location.origin + window.location.pathname}#${state.sharingKey || ''}>
+                  value=${window.location.origin + window.location.pathname}#${
+                    state.displayedSharingLink === 'noEmails'
+                      ? 'no-mails-' + state.keys.noEmails
+                      : 'send-mails-' + state.keys.sendEmails
+                  }>
                 <span class=input-group-btn>
                   <button class='btn btn-light clippy' data-clipboard-target=#connection-id>
                     <img src=assets/clippy.svg>
                   </button>
                 </span>
               </div>
-              <input type=email class=form-control placeholder='Recipient mail address' ${
-                state.displayedLinkType === 'sendMail' ? '' : 'disabled'
-              } value=${state.email.remote.address ? state.email.remote.address : ''}>
+              <input type=email class=form-control placeholder=${
+                state.displayedSharingLink === 'sendEmails' ? 'Recipient mail address' : ''
+               } ${
+                state.displayedSharingLink === 'sendEmails' ? '' : 'disabled'} value=${
+                  state.email.remote.address ? state.email.remote.address : ''
+                }>
             </div>
             <hr>
 
+            <!-- nodejs -->
             <div class=form-group>
-              <label>NodeJS offloader</label> <span class='badge badge-${state.offloading ? 'success' : 'dark'}'>
-                ${state.offloading ? 'connected' : 'disconnected'}
+              <label>NodeJS offloader</label> <span class='badge badge-${state.nodejs ? 'success' : 'dark'}'>
+                ${state.nodejs ? 'connected' : 'disconnected'}
               </span>
               <p style='line-height: 1.2;'><small>
                 Let a regular server do the monitoring and sending of notification mails. It will automatically mirror the node list from this page.
@@ -168,10 +177,11 @@ function mainView (state, emit) {
                   } style='border: 1px solid rgba(0,0,0,.15);'>Connect</button>
                 </span>
               </div>
-              <input type=email class=form-control placeholder='Recipient mail address'>
+              <input type=email-nodejs class=form-control placeholder='Recipient mail address'>
             </div>
             <hr>
             
+            <!-- local email -->
             <div class=form-group>
               <label>Send notification mails</label> <span class='badge badge-${state.email.local.enabled ? 'success' : 'dark'}'>
                 ${state.email.local.enabled ? 'enabled' : 'disabled'}
@@ -195,6 +205,8 @@ function mainView (state, emit) {
               </div>
             </div>
           </div>
+
+          <!-- save -->
           <div class=modal-footer>
             <button class='btn btn-secondary' onclick=${x => emit('toggleEmailLocal')}>Discard</button>
             <button class='btn btn-primary' onclick=${x => {
@@ -341,11 +353,16 @@ function uiStore (state, emitter) {
   state.suggestions = state.suggestions || []
   state.input = state.input || ''
   state.displaySuggestions = false
+  state.displayedSharingLink = state.displayedSharingLink || 'noEmails'
   state.email = state.email || {
     local: {},
-    remote: {}
+    remote: {},
+    nodejs: {}
   }
-  state.displayedLinkType = state.displayedLinkType || 'justMirror'
+  state.keys = state.keys || {
+    noEmails: Swarm.createKey(),
+    sendEmails: Swarm.createKey()
+  }
 
   emitter.on('toggleSuggestions', x => {
     state.displaySuggestions = x
@@ -386,8 +403,8 @@ function uiStore (state, emitter) {
     debug('connectOffloader')
   })
   emitter.on('toggleSharingLink', x => {
-    state.displayedLinkType = state.displayedLinkType === 'noMail'
-      ? 'sendMail' : 'noMail'
+    state.displayedSharingLink = state.displayedSharingLink === 'noEmails'
+      ? 'sendEmails' : 'noEmails'
     emitter.emit('render')
   })
 }
@@ -399,11 +416,8 @@ function startSharing (state, emit) {
   )
   let keys = {}
   let ephemeralKey
-  if (!hash) {
-    keys.noMail = state.keys.noMail || Swarm.createKey()
-    keys.sendMail = state.keys.sendMail || Swarm.createKey()
-  } else {
-    ephemeralKey = hash.split('-')[1]
+  if (hash) {
+    ephemeralKey = hash.split('-').pop()
   }
   let swarm = new Swarm(hub, {
     keys: Object.keys(state.keys).map(type => state.keys[type])
@@ -417,7 +431,7 @@ function startSharing (state, emit) {
       let storage = JSON.parse(window.localStorage.getItem(storageName))
       delete storage.keys
       if (peer.key === keys.noMail) {
-        delete storage.sendMail
+        delete storage.sendEmail
       }
       peer.send(storage)
     }
