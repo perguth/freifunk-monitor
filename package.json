@@ -13,7 +13,7 @@
   "browser": "browser.js",
   "scripts": {
     "test": "standard",
-    "start": "npm run browser & npm run server",
+    "start": "signalhub listen -p 7000 & npm run browser & npm run server",
     "browser": "budo --live --host localhost browser.js:bundle.js -- -t envify",
     "build": "mkdir -p build && browserify browser.js -o build/bundle.js -t [envify purge] -t babelify --presets [es2015] && cp -r index.html assets build/ && touch build/.nojekyll",
     "server": "nodemon server.js"
@@ -43,7 +43,7 @@
     "nanocomponent": "^6.4.2",
     "node-fetch": "^1.7.3",
     "popper.js": "^1.12.5",
-    "secure-webrtc-swarm": "^5.0.0",
+    "secure-webrtc-swarm": "^5.0.1",
     "signalhub": "^4.9.0",
     "socket.io": "^2.0.3",
     "utf-8-validate": "^3.0.3"
