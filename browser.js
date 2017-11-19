@@ -18,6 +18,10 @@ let minSearchLengh = 5
 let pollingTime = 1000 * 60 * 15
 let socket = socketIo(wsUrl)
 let storageName = 'ffs-monitor-v' + require('./package.json').version[0]
+let hash = window.location.hash.substr(1)
+
+let storage = window.localStorage.getItem(storageName)
+console.log('storage', JSON.parse(storage))
 
 let app = choo()
 if (process.env.NODE_ENV !== 'production') {
@@ -46,13 +50,13 @@ function notify (msg, state, testMail) {
   if (state.sendMail || testMail) {
     email.domainKey = apostleKey
     email.deliver('node-changes-state', {
-      email: state.mailto,
+      email: state.email.local.address,
       node: {
         id: 'ec:08:6b:f7:d4:ae',
         name: 'ffs-aleppo-kiefer'
       }
-    }).then(x => debug('Sent test mail'), err => {
-      debug('Sending mail failed', err)
+    }).then(x => debug('Sent test email'), err => {
+      debug('Sending email failed', err)
     })
   }
 }
@@ -70,7 +74,7 @@ window.setTimeout(x => {
 }, 300)
 
 app.use((state, emitter) => {
-  if (state.sharing) startSharing(state)
+  if (state.sharing || hash) startSharing(state)
 
   socket.on('getId', id => {
     emitter.emit('add', id)
@@ -127,12 +131,12 @@ function mainView (state, emit) {
                 • ${state.sharing ? 'disable' : 'enable'}
               </a></span>
               <p style='line-height: 1.2; text-align: justify;'><small>
-                These links can grant read-only access to the list of nodes assembled on this page. The current site will be mirrored automatically as long as the sharing link is enabled and the page remains open. The "Send mail"-link will also enable notification emails.
+                These links can grant read-only access to the list of nodes assembled on this page. The current site will be mirrored automatically as long as the sharing link is enabled and the page remains open. The "Send mail"-link will also enable notification mails.
               </small></p>
               <div class=input-group style='margin-bottom: 6px;'>
                 <div class=input-group-btn>
-                  <button type=button class='btn btn-light dropdown-toggle' style='border: 1px solid rgba(0,0,0,.15); border-right: 0;'>
-                    Just mirror
+                  <button type=button class='btn btn-light dropdown-toggle' style='border: 1px solid rgba(0,0,0,.15); border-right: 0;' onclick=${x => emit('toggleSharingLink')}>
+                    ${state.displayedLinkType === 'sendEmail' ? 'Send mails' : 'No mails'}
                   </button>
                 </div>
                 <input type=url class=form-control ${state.sharing ? '' : 'disabled'}
@@ -143,38 +147,47 @@ function mainView (state, emit) {
                   </button>
                 </span>
               </div>
-              <input type=email class=form-control placeholder='Recipient email address' disabled>
+              <input type=email class=form-control placeholder='Recipient mail address' ${
+                state.displayedLinkType === 'sendMail' ? '' : 'disabled'
+              } value=${state.email.remote.address ? state.email.remote.address : ''}>
             </div>
             <hr>
 
             <div class=form-group>
-              <label>NodeJS offloader</label> <span class='badge badge-${state.sharing ? 'success' : 'dark'}'>
-                ${state.sharing ? 'connected' : 'disconnected'}
+              <label>NodeJS offloader</label> <span class='badge badge-${state.offloading ? 'success' : 'dark'}'>
+                ${state.offloading ? 'connected' : 'disconnected'}
               </span>
               <p style='line-height: 1.2;'><small>
-                Let a regular server do the monitoring and sending of notification emails. It will automatically mirror the node list from this page.
+                Let a regular server do the monitoring and sending of notification mails. It will automatically mirror the node list from this page.
               </small></p>
-              <input type=url class=form-control placeholder='Your API key' style='margin-bottom: 6px;'>
-              <input type=email class=form-control placeholder='Recipient email address'>
+              <div class=input-group style='margin-bottom: 6px;'>
+                <input type=url class=form-control placeholder='Your API key'>
+                <span class=input-group-btn>
+                  <button class='btn btn-light' type=button onclick=${
+                    x => emit('connectOffloader')
+                  } style='border: 1px solid rgba(0,0,0,.15);'>Connect</button>
+                </span>
+              </div>
+              <input type=email class=form-control placeholder='Recipient mail address'>
             </div>
             <hr>
             
             <div class=form-group>
-              <label>Send notification mails</label> <span class='badge badge-${state.sendMail ? 'success' : 'dark'}'>
-                ${state.sendMail ? 'enabled' : 'disabled'}
+              <label>Send notification mails</label> <span class='badge badge-${state.email.local.enabled ? 'success' : 'dark'}'>
+                ${state.email.local.enabled ? 'enabled' : 'disabled'}
               </span>
-              <span class=float-right><a href=# onclick=${x => emit('toggleSendMail')}>
-                • ${state.sendMail ? 'disable' : 'enable'}
+              <span class=float-right><a href=# onclick=${x => emit('toggleEmailLocal')}>
+                • ${state.email.local.enabled ? 'disable' : 'enable'}
               </a></span>
               <p style='line-height: 1.2;'><small>
                 As long as this page remains open it can send notification emails when nodes go offline or come back online.
               </small></p>
-              <div class="input-group">
-                <input id=mailto type=email class=form-control placeholder='Recipient email address' value=${state.mailto || ''}>
-                <span class="input-group-btn">
-                  <button class="btn btn-light" type="button" onclick=${x => {
+              <div class=input-group>
+                <input id=mailto type=email class=form-control placeholder='Recipient email address' value=${state.email.local.address || ''}>
+                <span class=input-group-btn>
+                  <button class='btn btn-light' type=button onclick=${x => {
                     notify('Trying to send a test mail', state, true)
-                    emit('saveMailto', document.getElementById('mailto').value)
+                    emit('saveRemoteEmailAddress', document.getElementById('mailto').value)
                   }} style='border: 1px solid rgba(0,0,0,.15);'>
                     Send a test email
                   </button>
@@ -183,10 +196,10 @@ function mainView (state, emit) {
             </div>
           </div>
           <div class=modal-footer>
-            <button class='btn btn-secondary' onclick=${x => emit('toggleSendMail')}>Discard</button>
+            <button class='btn btn-secondary' onclick=${x => emit('toggleEmailLocal')}>Discard</button>
             <button class='btn btn-primary' onclick=${x => {
               emit('toggleModal')
-              emit('saveMailto', document.getElementById('mailto').value)
+              emit('saveRemoteEmailAddress', document.getElementById('mailto').value)
             }}>Save</button>
           </div>
         </div>
@@ -233,15 +246,15 @@ function mainView (state, emit) {
             let node = state.nodes[id]
             if (!node.flags) return
             return html`<li id=${window.Symbol()}
-              class='list-group-item
-              ${!node.flags.online ? 'list-group-item-dark' : ''}
-              ${node.flags.online && node.clientcount === 0 ? 'list-group-item-info' : ''}
-              ${node.flags.online && node.clientcount > 0 ? 'list-group-item-warning' : ''}'
-              draggable=true
-              ondragstart=${drag.bind(null, i)}
-              ondrop=${drop.bind(null, i)}
-              ondragover=${x => false}
-            >
+                class='list-group-item
+                ${!node.flags.online ? 'list-group-item-dark' : ''}
+                ${node.flags.online && node.clientcount === 0 ? 'list-group-item-info' : ''}
+                ${node.flags.online && node.clientcount > 0 ? 'list-group-item-warning' : ''}'
+                draggable=true
+                ondragstart=${drag.bind(null, i)}
+                ondrop=${drop.bind(null, i)}
+                ondragover=${x => false}
+              >
               <b>${node.name}</b> (<a href='${restUrl}/v1/id/${id}'>${id}</a>),
               ${node.flags.online ? 'online,' : 'offline'}
               ${node.flags.online ? node.clientcount + ' clients' : ''}
@@ -257,10 +270,11 @@ function mainView (state, emit) {
       </div></section>
       <footer style='margin-top: 8px;'>
         <small style='display: block; text-align: center; color: grey;'>
-          <code>v${require('./package.json').version}</code> <a href=https://github.com/pguth/ffs-monitor class=github>Github</a>
-          has the source. <a href=${
-            'data:application/octet-stream;charset=utf-8;base64,' +
-            window.btoa(window.localStorage.getItem(storageName))
+          <code>v${require('./package.json').version}</code> <a
+            href=https://github.com/pguth/ffs-monitor class=github>Github</a>
+            has the source. <a href=${
+              'data:application/octet-stream;charset=utf-8;base64,' +
+              window.btoa(window.localStorage.getItem(storageName))
           } download=ffs-monitor.localStorage.txt>Export</a>, <a onclick=${
             x => document.querySelectorAll('input[type=file]')[0].click()
           } href=#>import</a> or <a onclick=${x => emit('toggleModal')} href=#>transfer</a> data.
@@ -327,7 +341,11 @@ function uiStore (state, emitter) {
   state.suggestions = state.suggestions || []
   state.input = state.input || ''
   state.displaySuggestions = false
-  // let tmpSmtp = {}
+  state.email = state.email || {
+    local: {},
+    remote: {}
+  }
+  state.displayedLinkType = state.displayedLinkType || 'justMirror'
 
   emitter.on('toggleSuggestions', x => {
     state.displaySuggestions = x
@@ -357,39 +375,51 @@ function uiStore (state, emitter) {
     state.remoteMailing = !state.remoteMailing
     emitter.emit('render')
   })
-  emitter.on('saveMailto', x => {
-    state.mailto = x
+  emitter.on('saveRemoteEmailAddress', x => {
+    state.email.local.address = x
   })
-  emitter.on('toggleSendMail', x => {
-    state.sendMail = !state.sendMail
+  emitter.on('toggleEmailLocal', x => {
+    state.email.local.enabled = !state.email.local.enabled
     emitter.emit('render')
   })
-  emitter.on('toggleSmtpPersistence', x => {
-    // if (!state.smtp || state.smtp === {}) {
-    //   state.smtp = tmpSmtp
-    // }
-    // tmpSmtp = state.smtp
-    // state.smtp = {}
+  emitter.on('connectOffloader', x => {
+    debug('connectOffloader')
+  })
+  emitter.on('toggleSharingLink', x => {
+    state.displayedLinkType = state.displayedLinkType === 'noMail'
+      ? 'sendMail' : 'noMail'
+    emitter.emit('render')
   })
 }
 
 function startSharing (state, emit) {
-  let hash = window.location.hash.substr(1)
   let hub = new Signalhub(
     `ffs-monitor-v${require('./package.json').version[0]}`,
-    ['https://signalhub.perguth.de:65300/']
+    ['https://signalhub.perguth.de:65300/'] // TODO: Multiple hubs for redundancy
   )
-  let sharingKey = hash || state.sharingKey || Swarm.createSecret()
-  let swarm = new Swarm(hub, {secret: sharingKey})
-  if (emit) emit('startedSharing', {swarm, sharingKey})
+  let keys = {}
+  let ephemeralKey
+  if (!hash) {
+    keys.noMail = state.keys.noMail || Swarm.createKey()
+    keys.sendMail = state.keys.sendMail || Swarm.createKey()
+  } else {
+    ephemeralKey = hash.split('-')[1]
+  }
+  let swarm = new Swarm(hub, {
+    keys: Object.keys(state.keys).map(type => state.keys[type])
+  })
+  if (ephemeralKey) swarm.keys.push(ephemeralKey)
+  if (emit) emit('startedSharing', {swarm, keys})
 
   swarm.on('peer', peer => {
     debug('Peer connected')
     if (!hash) {
-      let shareSmtp = state.shareSmtp
-      if (!shareSmtp) emit('toggleSmtpPersistence')
-      peer.send(window.localStorage.getItem(storageName))
-      if (!shareSmtp) emit('toggleSmtpPersistence')
+      let storage = JSON.parse(window.localStorage.getItem(storageName))
+      delete storage.keys
+      if (peer.key === keys.noMail) {
+        delete storage.sendMail
+      }
+      peer.send(storage)
     }
     peer.on('data', data => {
       let json = JSON.parse(data)
