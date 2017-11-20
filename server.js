@@ -12,7 +12,7 @@ let cors = require('cors')
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
 let minTimeout = 1000 * 60 * 15
-let minSearchLengh = 5
+let minSearchLengh = 3
 let state = {}
 let server
 nodeStore()
@@ -50,7 +50,10 @@ io.sockets.on('connection', function (socket) {
     socket.emit('getId', getId(lookup))
   })
   socket.on('search', x => {
-    if (x.length < minSearchLengh) return
+    if (
+      (x.startsWith('ffs-') && x.length <= (minSearchLengh + 'ffs-'.length)) ||
+      (!x.startsWith('ffs-') && x.length <= minSearchLengh)
+    ) return
     let results = {
       names: Object.keys(state.names).filter(name => name.includes(x)),
       ids: Object.keys(state.nodes).filter(id => id.includes(x))

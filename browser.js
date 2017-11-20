@@ -99,7 +99,7 @@ let Input = class Component extends Nanocomponent {
     this.state = state
     return html`
       <input onkeypress=${state.onkeypress} onfocus=${state.onfocus} onblur=${state.onblur}
-      class=form-control type=text placeholder='name or mac address' data-toggle=dropdown>
+      class=form-control type=text placeholder='Name or MAC address' data-toggle=dropdown>
     `
   }
   update () {}
@@ -221,29 +221,37 @@ function mainView (state, emit) {
       </div>
     </div>
     <br>
-    <div class=container><header class=row>
+    
+    <div class=container>
+      <!-- search bar -->
+      <header class=row>
         <div class='col input-group dropdown show'>
-        ${input.render({onkeypress: search, onfocus: showSuggestions, onblur: hideSuggestions})}
+          ${input.render({onkeypress: search, onfocus: showSuggestions, onblur: hideSuggestions})}
 
-        <div class=dropdown-menu
-          style='
-            ${state.displaySuggestions ? 'display: block;' : 'display: hidden;'}
-            width: calc(100% - 30px); margin-left: 15px; margin-right: 15px;
-          '>
-          ${state.suggestions.map((x, i) => html`
-            <button onclick=${selected.bind(null, i)} class=dropdown-item>${x}</button>
-          `)}
+          <div class=dropdown-menu
+            style='
+              ${state.displaySuggestions && state.suggestions.length
+                ? 'display: block;' : 'display: hidden;'}
+              width: calc(100% - 30px); margin-left: 15px; margin-right: 15px;
+            '>
+            ${state.suggestions.map((x, i) => html`
+              <button onclick=${selected.bind(null, i)} class=dropdown-item>${x}</button>
+            `)}
+          </div>
+
+          <span class=input-group-btn>
+            <button onclick=${add} class='btn
+              ${document.querySelectorAll('header input')[0] &&
+              document.querySelectorAll('header input')[0].value
+                  ? 'btn-primary'
+                  : 'btn-secondary'}
+            '>Save</button>
+          </span>
         </div>
+        <button onclick=${x => emit('toggleModal')} class='btn btn-light'>⚙</button>
+      </header>
 
-        <span class=input-group-btn>
-          <button onclick=${add} class='btn
-            ${document.querySelectorAll('header input')[0] &&
-            document.querySelectorAll('header input')[0].value
-                ? 'btn-primary'
-                : 'btn-secondary'}
-          '>add</button>
-        </span>
-      </div></header>
+      <!-- node list -->
       <div class=row style='text-align: center; display: ${nodeCount ? 'block' : 'none'};'>
         <br>
         <div class=col>
@@ -283,6 +291,7 @@ function mainView (state, emit) {
         </ul>
         <br>
       </div></section>
+      
       <footer style='margin-top: 8px;'>
         <small style='display: block; text-align: center; color: grey;'>
           <code>v${require('./package.json').version}</code> <a
