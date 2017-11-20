@@ -36,41 +36,45 @@ app.use(nodeStore)
 app.route('*', mainView)
 app.mount('body')
 
-window.Notification.requestPermission()
-function notify (msg, state, testMail) {
-  debug('Tyring to display a system notification')
+function notify (id, state, testMail) {
+  debug('Tyring to send notifications')
+
+  let msg = `Node ${state.nodes[id].name} came online!`
   new window.Notification('ffs-monitor', { // eslint-disable-line
     body: msg,
     icon: 'assets/ffs-logo-128.png',
     sticky: true
   })
+
   if (state.sendEmail || testMail) {
     email.domainKey = apostleKey
+    let node = testMail ? {
+      id: 'ec:08:6b:f7:d4:ae',
+      name: 'ffs-aleppo-kiefer'
+    } : {id, name: state.nodes[id].name}
     email.deliver('node-changes-state', {
       email: state.email.local.address,
-      node: {
-        id: 'ec:08:6b:f7:d4:ae',
-        name: 'ffs-aleppo-kiefer'
-      }
+      node
     }).then(x => debug('Sent test email'), err => {
       debug('Sending email failed', err)
     })
   }
 }
 
-window.setTimeout(x => {
-  document.querySelectorAll('input[type=file]')[0].addEventListener('change', e => {
-    let file = e.target.files[0]
-    let reader = new window.FileReader()
-    reader.onloadend = e => {
-      window.localStorage.setItem(storageName, e.target.result)
-      window.location.reload()
-    }
-    reader.readAsText(file)
-  }, false)
-}, 300)
-
 app.use((state, emitter) => {
+  window.Notification.requestPermission()
+  emitter.on('DOMContentLoaded', function () {
+    document.querySelectorAll('input[type=file]')[0].addEventListener('change', e => {
+      let file = e.target.files[0]
+      let reader = new window.FileReader()
+      reader.onloadend = e => {
+        window.localStorage.setItem(storageName, e.target.result)
+        window.location.reload()
+      }
+      reader.readAsText(file)
+    }, false)
+  })
+
   if (state.sharing || hash) {
     debug('Starting sharing')
     startSharing(state)
@@ -486,10 +490,10 @@ function nodeStore (state, emitter) {
       res.json().then(node => {
         state.timestamp = node.timestamp
         if (!state.nodes[id].online && node.online) {
-          notify(`Node ${node.name} came online!`, state)
+          notify(id, state)
         }
         if (state.nodes[id].online && !node.online) {
-          notify(`Node ${node.name} went offline!`, state)
+          notify(`Node ${node.name} went offline!`, id, state)
         }
         state.nodes[id] = node
         emitter.emit('render')
