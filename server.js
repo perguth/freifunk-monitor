@@ -8,7 +8,9 @@ let https = require('https')
 let fs = require('fs')
 let memoize = require('fast-memoize')
 let cors = require('cors')
+let jsonParser = require('body-parser').json()
 
+let credentialsPath = process.env.CREDENTIALS || './credentials.json'
 let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
 let v = 'v' + require('./package.json').version[0]
 let minTimeout = 1000 * 60 * 15
@@ -122,6 +124,27 @@ app.get(`/${v}/all`, (req, res) => {
   res.send(nodes)
 })
 
+app.post(`/${v}/offload`, jsonParser, (req, res) => {
+  let credentials
+  try {
+    credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'))
+  } catch (err) {
+    credentials = {keys: {}}
+    debug('`credentials.json` missing. Set path in environment variable `CREDENTIALS`!')
+  }
+  let key = req.body.key
+  console.log('key', key, credentials.keys[key])
+  if (!credentials.keys[key]) {
+    debug('Refused offloader request for key:', key)
+    res.send(JSON.stringify({err: 'API key not allowed: ' + key}))
+    return
+  }
+  debug('Allowed offloader request for key:', key)
+  debug('I should monitor now:', req.body.nodes, 'and send mails to:', req.body.email)
+  res.send('{}')
+})
+
+// ui
 app.get('/', (req, res) => res.send(`<style>
   a {
     text-decoration: none;

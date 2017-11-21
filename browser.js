@@ -12,6 +12,7 @@ let moment = require('moment')
 
 let restUrl = process.env.REST_URL || 'http://localhost:9000'
 let wsUrl = process.env.WS_URL || restUrl
+let offloaderUrl = process.env.API_URL || restUrl
 let apostleKey = process.env.APOSTLE_KEY || 'd867ceb476158bda34e72c0c5e26c2dde0039d9d'
 
 let minSearchLengh = 5
@@ -63,8 +64,7 @@ function notify (id, state, testMail) {
 
 app.use((state, emitter) => {
   window.Notification.requestPermission()
-  emitter.on('DOMContentLoaded', function () {
-    console.log('choo', state)
+  emitter.on('DOMContentLoaded', x => {
     document.querySelectorAll('input[type=file]')[0].addEventListener('change', e => {
       let file = e.target.files[0]
       let reader = new window.FileReader()
@@ -78,6 +78,11 @@ app.use((state, emitter) => {
     if (state.sharing || hash) {
       debug('Starting sharing')
       startSharing(state, emitter)
+    }
+    let offloader = state.query['offloader']
+    if (offloader) {
+      emitter.emit('saveOffloader', offloader)
+      emitter.emit('replaceState', '/') // remove query string
     }
   })
 
@@ -177,21 +182,24 @@ function mainView (state, emit) {
               <p style='line-height: 1.2;'><small>
                 Let a regular server do the monitoring and sending of notification mails. It will automatically mirror the node list from this page.
               </small></p>
-              <div class='alert alert-warning' role=alert style='line-height: 1.2; padding-right: 15px; padding-top: 9px;'><small>
-                <img src=https://avatars2.githubusercontent.com/u/85259 class='rounded float-left' style='width: 62px; height: 61px; margin: -10px 8px 0 -21px; border: 1px solid #ffeeba;'>You have been granted access to an server run by <a href=https://github.com/perguth/>Per Guth</a>.<br> Maybe invite him on a mate cola next time you see him :)
-                </small></div>
+              <div class='alert alert-warning' role=alert style='line-height: 1.2; padding-right: 15px; padding-top: 9px;'>
+                <small>
+                  <img src=https://avatars2.githubusercontent.com/u/85259 class='rounded float-left' style='width: 62px; height: 61px; margin: -10px 8px 0 -21px; border: 1px solid #ffeeba;'>You have been granted access to an server run by <a href=https://github.com/perguth/>Per Guth</a>.<br> Maybe invite him on a mate cola next time you see him :)
+                </small>
+              </div>
               <div class=input-group style='margin-bottom: 6px;'>
-                <input type=url id=keys-api value=${
-                  state.keys.api
+                <input type=url id=key-offloader value=${
+                  state.keys.offloader || ''
                 } class=form-control placeholder='Your API key'>
                 <span class=input-group-btn>
-                  <button class='btn btn-light' type=button onclick=${
-                    x => emit('connectOffloader')
-                  } style='border: 1px solid rgba(0,0,0,.15);'>Connect</button>
+                  <button class='btn btn-light' type=button onclick=${x => {
+                    emit('saveSettings')
+                    emit('connectOffloader')
+                  }} style='border: 1px solid rgba(0,0,0,.15);'>Connect</button>
                 </span>
               </div>
-              <input type=email id=email-address-nodejs value=${
-                state.email.nodejs.address || ''
+              <input type=email id=email-address-offloader value=${
+                state.email.offloader.address || ''
               } class=form-control placeholder='Recipient mail address'>
             </div>
             <hr>
@@ -377,12 +385,12 @@ function uiStore (state, emitter) {
   state.email = state.email || {
     local: {},
     remote: {},
-    nodejs: {}
+    offloader: {}
   }
   state.keys = state.keys || {
     noEmails: Swarm.createKey(),
     sendEmails: Swarm.createKey(),
-    api: ''
+    offloader: ''
   }
 
   emitter.on('render', x => {
@@ -391,12 +399,17 @@ function uiStore (state, emitter) {
     if (hash) window.location.hash = '#' + hash
   })
 
+  emitter.on('saveOffloader', x => {
+    state.keys.offloader = x
+    emitter.emit('render')
+  })
+
   emitter.on('saveSettings', x => {
     debug('Saving settings')
     state.email.local.address = document.getElementById('email-address-local').value
     state.email.remote.address = document.getElementById('email-address-remote').value
-    state.email.nodejs.address = document.getElementById('email-address-nodejs').value
-    state.keys.api = document.getElementById('keys-api').value
+    state.email.offloader.address = document.getElementById('email-address-offloader').value
+    state.keys.offloader = document.getElementById('key-offloader').value
   })
   emitter.on('toggleSuggestions', x => {
     state.displaySuggestions = x
@@ -431,7 +444,25 @@ function uiStore (state, emitter) {
     emitter.emit('render')
   })
   emitter.on('connectOffloader', x => {
-    debug('connectOffloader')
+    let headers = new window.Headers()
+    headers.append('Content-Type', 'application/json')
+    window.fetch(offloaderUrl + '/v1/offload', {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({
+        key: state.keys.offloader,
+        nodes: Object.keys(state.nodes),
+        email: state.email.offloader.address
+      })
+    }).then(res => {
+      res.json().then(res => {
+        if (res.err) {
+          debug('Offloader: ' + res.err)
+          return
+        }
+        debug('Offloader: API key accepted')
+      })
+    })
   })
   emitter.on('toggleSharingLink', x => {
     state.displayedSharingLink = state.displayedSharingLink === 'noEmails'
@@ -457,7 +488,10 @@ function startSharing (state, emitter) {
     }
     ephemeralKey = hash.split('-').pop()
   }
-  let keys = Object.keys(state.keys).map(type => state.keys[type])
+  let keys = Object.keys(state.keys).map(type => {
+    if (type === 'offloader') return state.keys[type].wrtc
+    return state.keys[type]
+  })
   let swarm = new Swarm(hub, {keys})
   if (ephemeralKey) swarm.keys.push(ephemeralKey)
 
