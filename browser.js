@@ -167,14 +167,17 @@ function mainView (state, emit) {
 
             <!-- nodejs -->
             <div class=form-group>
-              <label>NodeJS offloader</label> <span class='badge badge-${state.nodejs ? 'success' : 'dark'}'>
+              <label>Monitoring server</label> <span class='badge badge-${state.nodejs ? 'success' : 'dark'}'>
                 ${state.nodejs ? 'connected' : 'disconnected'}
               </span>
+              <span class=float-right><a href=# onclick=${x => emit('toggleEmailLocal')}>
+                • ${state.email.local.enabled ? 'disable' : 'enable'}
+              </a></span>
               <p style='line-height: 1.2;'><small>
                 Let a regular server do the monitoring and sending of notification mails. It will automatically mirror the node list from this page.
               </small></p>
               <div class='alert alert-warning' role=alert style='line-height: 1.2; padding-right: 15px; padding-top: 9px;'><small>
-                <img src=https://avatars2.githubusercontent.com/u/85259 class='rounded float-left' style='width: 62px; margin: -11px 8px 0 -21px; border: 1px solid #ffeeba;'>You have been granted access to a offloader run by <a href=https://github.com/perguth/>Per Guth</a>.<br> Maybe invite him on a mate cola next time you see him :)
+                <img src=https://avatars2.githubusercontent.com/u/85259 class='rounded float-left' style='width: 62px; margin: -11px 8px 0 -21px; border: 1px solid #ffeeba;'>You have been granted access to an offloader run by <a href=https://github.com/perguth/>Per Guth</a>.<br> Maybe invite him on a mate cola next time you see him :)
                 </small></div>
               <div class=input-group style='margin-bottom: 6px;'>
                 <input type=url id=keys-api value=${
@@ -194,7 +197,7 @@ function mainView (state, emit) {
             
             <!-- local email -->
             <div class=form-group>
-              <label>Send notification mails</label> <span class='badge badge-${state.email.local.enabled ? 'success' : 'dark'}'>
+              <label>Notification mails</label> <span class='badge badge-${state.email.local.enabled ? 'success' : 'dark'}'>
                 ${state.email.local.enabled ? 'enabled' : 'disabled'}
               </span>
               <span class=float-right><a href=# onclick=${x => emit('toggleEmailLocal')}>
@@ -210,7 +213,7 @@ function mainView (state, emit) {
                     notify('Trying to send a test mail', state, true)
                     emit('saveRemoteEmailAddress', document.getElementById('mailto').value)
                   }} style='border: 1px solid rgba(0,0,0,.15);'>
-                    Send a test email
+                    Send test mail
                   </button>
                 </span>
               </div>
@@ -300,7 +303,7 @@ function mainView (state, emit) {
         <small style='display: block; text-align: center; color: grey;'>
           <code>v${require('./package.json').version}</code> <a
             href=https://github.com/pguth/ffs-monitor class=github>Github</a>
-            has the source. <a href=${
+            has the source! <a href=${
               'data:application/octet-stream;charset=utf-8;base64,' +
               window.btoa(window.localStorage.getItem(storageName))
           } download=ffs-monitor.localStorage.txt>Export</a>, <a onclick=${
