@@ -178,7 +178,7 @@ function mainView (state, emit) {
                 Let a regular server do the monitoring and sending of notification mails. It will automatically mirror the node list from this page.
               </small></p>
               <div class='alert alert-warning' role=alert style='line-height: 1.2; padding-right: 15px; padding-top: 9px;'><small>
-                <img src=https://avatars2.githubusercontent.com/u/85259 class='rounded float-left' style='width: 62px; margin: -11px 8px 0 -21px; border: 1px solid #ffeeba;'>You have been granted access to an offloader run by <a href=https://github.com/perguth/>Per Guth</a>.<br> Maybe invite him on a mate cola next time you see him :)
+                <img src=https://avatars2.githubusercontent.com/u/85259 class='rounded float-left' style='width: 62px; height: 61px; margin: -10px 8px 0 -21px; border: 1px solid #ffeeba;'>You have been granted access to an server run by <a href=https://github.com/perguth/>Per Guth</a>.<br> Maybe invite him on a mate cola next time you see him :)
                 </small></div>
               <div class=input-group style='margin-bottom: 6px;'>
                 <input type=url id=keys-api value=${
