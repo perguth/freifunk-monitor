@@ -64,6 +64,7 @@ function notify (id, state, testMail) {
 app.use((state, emitter) => {
   window.Notification.requestPermission()
   emitter.on('DOMContentLoaded', function () {
+    console.log('choo', state)
     document.querySelectorAll('input[type=file]')[0].addEventListener('change', e => {
       let file = e.target.files[0]
       let reader = new window.FileReader()
@@ -76,7 +77,7 @@ app.use((state, emitter) => {
 
     if (state.sharing || hash) {
       debug('Starting sharing')
-      startSharing(state)
+      startSharing(state, emitter)
     }
   })
 
@@ -318,7 +319,7 @@ function mainView (state, emit) {
 
   function toggleSharing () {
     emit('toggleSharing')
-    if (state.sharing) startSharing(state, emit)
+    if (state.sharing) startSharing(state)
     else state.swarm.close()
   }
 
@@ -384,6 +385,12 @@ function uiStore (state, emitter) {
     api: ''
   }
 
+  emitter.on('render', x => {
+    // keep hash intact otherwise lost on 'render'
+    // TODO: what's the choo way?
+    if (hash) window.location.hash = '#' + hash
+  })
+
   emitter.on('saveSettings', x => {
     debug('Saving settings')
     state.email.local.address = document.getElementById('email-address-local').value
@@ -433,7 +440,7 @@ function uiStore (state, emitter) {
   })
 }
 
-function startSharing (state, emit) {
+function startSharing (state, emitter) {
   let hub = new Signalhub(
     `ffs-monitor-v${require('./package.json').version[0]}`,
     [
@@ -443,7 +450,13 @@ function startSharing (state, emit) {
   )
   let peers = []
   let ephemeralKey
-  if (hash) ephemeralKey = hash.split('-').pop()
+  if (hash) {
+    if (emitter) {
+      console.log('replaceState')
+      emitter.emit('replaceState', '#' + hash)
+    }
+    ephemeralKey = hash.split('-').pop()
+  }
   let keys = Object.keys(state.keys).map(type => state.keys[type])
   let swarm = new Swarm(hub, {keys})
   if (ephemeralKey) swarm.keys.push(ephemeralKey)
