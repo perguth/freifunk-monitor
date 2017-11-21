@@ -73,12 +73,12 @@ app.use((state, emitter) => {
       }
       reader.readAsText(file)
     }, false)
-  })
 
-  if (state.sharing || hash) {
-    debug('Starting sharing')
-    startSharing(state)
-  }
+    if (state.sharing || hash) {
+      debug('Starting sharing')
+      startSharing(state)
+    }
+  })
 
   socket.on('getId', id => {
     emitter.emit('add', id)
@@ -144,22 +144,23 @@ function mainView (state, emit) {
                     ${state.displayedSharingLink === 'noEmails' ? 'No mails' : 'Send mails'}
                   </button>
                 </div>
-                <input type=url class=form-control ${state.sharing ? '' : 'disabled'}
-                  value=${window.location.origin + window.location.pathname}#${
+                <input type=url class=form-control ${state.sharing ? '' : 'disabled'} value=${
+                  window.location.origin + window.location.pathname + '#' + (
                     state.displayedSharingLink === 'noEmails'
-                      ? 'no-mails-' + state.keys.noEmails
-                      : 'send-mails-' + state.keys.sendEmails
-                  }>
-                <span class=input-group-btn>
+                    ? 'no-mails-' + state.keys.noEmails
+                    : 'send-mails-' + state.keys.sendEmails
+                  )
+                }>
+                <div class=input-group-btn>
                   <button class='btn btn-light clippy' data-clipboard-target=#connection-id>
                     <img src=assets/clippy.svg>
                   </button>
-                </span>
+                </div>
               </div>
               <input type=email id=email-address-remote class=form-control placeholder=${
                 state.displayedSharingLink === 'sendEmails' ? 'Recipient mail address' : ''
-               } ${state.displayedSharingLink === 'sendEmails' ? '' : 'disabled'} value=${
-                  state.email.remote.address || ''
+                } ${state.displayedSharingLink === 'sendEmails' ? '' : 'disabled'} value=${
+                  state.displayedSharingLink === 'sendEmails' ? state.email.remote.address : ''
                 }>
             </div>
             <hr>
@@ -172,6 +173,9 @@ function mainView (state, emit) {
               <p style='line-height: 1.2;'><small>
                 Let a regular server do the monitoring and sending of notification mails. It will automatically mirror the node list from this page.
               </small></p>
+              <div class='alert alert-warning' role=alert style='line-height: 1.2; padding-right: 15px; padding-top: 9px;'><small>
+                <img src=https://avatars2.githubusercontent.com/u/85259 class='rounded float-left' style='width: 62px; margin: -11px 8px 0 -21px; border: 1px solid #ffeeba;'>You have been granted access to a offloader run by <a href=https://github.com/perguth/>Per Guth</a>.<br> Maybe invite him on a mate cola next time you see him :)
+                </small></div>
               <div class=input-group style='margin-bottom: 6px;'>
                 <input type=url id=keys-api value=${
                   state.keys.api
