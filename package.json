@@ -13,8 +13,8 @@
   "browser": "browser.js",
   "scripts": {
     "test": "standard",
-    "start": "export DEBUG=ffs-monitor; signalhub listen -p 7000 & npm run browser & npm run server",
-    "browser": "budo --live --host localhost browser.js:bundle.js -- -t envify",
+    "start": "export DEBUG=ffs-monitor; signalhub listen -p 8888 & npm run browser & npm run server",
+    "browser": "budo --live --host 0.0.0.0 --port 8000 browser.js:bundle.js -- -t envify",
     "build": "mkdir -p build && browserify browser.js -o build/bundle.js -t [envify purge] -t babelify --presets [es2015] && cp -r index.html assets build/ && touch build/.nojekyll",
     "server": "nodemon server.js"
   },

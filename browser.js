@@ -10,7 +10,7 @@ let socketIo = require('socket.io-client')
 let Swarm = require('secure-webrtc-swarm')
 let moment = require('moment')
 
-let restUrl = process.env.REST_URL || 'http://localhost:9000'
+let restUrl = process.env.REST_URL || 'http://localhost:8888'
 let wsUrl = process.env.WS_URL || restUrl
 let offloaderUrl = process.env.API_URL || restUrl
 let apostleKey = process.env.APOSTLE_KEY || 'd867ceb476158bda34e72c0c5e26c2dde0039d9d'
