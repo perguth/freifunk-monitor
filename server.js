@@ -1,26 +1,26 @@
 let backoff = require('backoff')
-let bus = require('nanobus')()
-let debug = require('debug')('ffs-monitor')
-let express = require('express')
-let fetch = require('node-fetch')
-let PORT = process.env.PORT || 8080
-let https = require('https')
-let fs = require('fs')
-let memoize = require('fast-memoize')
-let cors = require('cors')
-let jsonParser = require('body-parser').json()
+const bus = require('nanobus')()
+const debug = require('debug')('ffs-monitor')
+const express = require('express')
+const fetch = require('node-fetch')
+const PORT = process.env.PORT || 8080
+const https = require('https')
+const fs = require('fs')
+const memoize = require('fast-memoize')
+const cors = require('cors')
+const jsonParser = require('body-parser').json()
 
-let credentialsPath = process.env.CREDENTIALS || './credentials.json'
-let sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
-let v = 'v' + require('./package.json').version[0]
-let minTimeout = 1000 * 60 * 15
-let minSearchLengh = 3
-let state = {}
+const credentialsPath = process.env.CREDENTIALS || './credentials.json'
+const sourceUrl = 'https://netinfo.freifunk-stuttgart.de/json/nodes.json'
+const v = 'v' + require('./package.json').version[0]
+const minTimeout = 1000 * 60 * 15
+const minSearchLengh = 3
+const state = {}
 let server
 nodeStore()
 
 // express setup
-let app = express()
+const app = express()
 app.use('/assets', express.static('assets'))
 
 // server setup
@@ -28,19 +28,19 @@ if (!process.env.CERT) {
   app.use(cors())
   server = app.listen(PORT, x => { console.log(`HTTP server on :${PORT}`) })
 } else {
-  let cert = fs.readFileSync(process.env.CERT, 'utf8')
-  let key = fs.readFileSync(process.env.KEY, 'utf8')
-  server = https.createServer({key, cert}, app)
+  const cert = fs.readFileSync(process.env.CERT, 'utf8')
+  const key = fs.readFileSync(process.env.KEY, 'utf8')
+  server = https.createServer({ key, cert }, app)
   server.listen(PORT, x => { console.log(`HTTPS server on :${PORT}`) })
   if (process.env.HTTP_PORT) {
-    let HTTP_PORT = process.env.HTTP_PORT
+    const HTTP_PORT = process.env.HTTP_PORT
     app.listen(HTTP_PORT, x => { console.log(`HTTP server on :${HTTP_PORT}`) })
   }
 }
 
 // socket.io
-let io = require('socket.io')(server)
-let getId = memoize(lookup => {
+const io = require('socket.io')(server)
+const getId = memoize(lookup => {
   let res
   res = state.names[lookup]
   if (res) return res
@@ -56,7 +56,7 @@ io.sockets.on('connection', function (socket) {
       (x.startsWith('ffs-') && x.length <= (minSearchLengh + 'ffs-'.length)) ||
       (!x.startsWith('ffs-') && x.length <= minSearchLengh)
     ) return
-    let results = {
+    const results = {
       names: Object.keys(state.names).filter(name => name.includes(x)),
       ids: Object.keys(state.nodes).filter(id => id.includes(x))
     }
@@ -105,22 +105,22 @@ app.use((req, res, next) => {
   next()
 })
 
-app.get(`/version`, (req, res) => res.send(v))
+app.get('/version', (req, res) => res.send(v))
 
 app.get(`/${v}/id/:id`, (req, res) => {
-  let id = req.params.id
-  let node = Object.assign({}, state.nodes[id], {timestamp: state.timestamp})
+  const id = req.params.id
+  const node = Object.assign({}, state.nodes[id], { timestamp: state.timestamp })
   res.send(node)
 })
 
 app.get(`/${v}/name/:name`, (req, res) => {
-  let id = state.names[req.params.name]
-  let node = Object.assign({}, state.nodes[id], {timestamp: state.timestamp})
+  const id = state.names[req.params.name]
+  const node = Object.assign({}, state.nodes[id], { timestamp: state.timestamp })
   res.send(node)
 })
 
 app.get(`/${v}/all`, (req, res) => {
-  let nodes = Object.assign({}, state.nodes, {timestamp: state.timestamp})
+  const nodes = Object.assign({}, state.nodes, { timestamp: state.timestamp })
   res.send(nodes)
 })
 
@@ -129,14 +129,14 @@ app.post(`/${v}/offload`, jsonParser, (req, res) => {
   try {
     credentials = JSON.parse(fs.readFileSync(credentialsPath, 'utf8'))
   } catch (err) {
-    credentials = {keys: {}}
+    credentials = { keys: {} }
     debug('`credentials.json` missing. Set path in environment variable `CREDENTIALS`!')
   }
-  let key = req.body.key
+  const key = req.body.key
   console.log('key', key, credentials.keys[key])
   if (!credentials.keys[key]) {
     debug('Refused offloader request for key:', key)
-    res.send(JSON.stringify({err: 'API key not allowed: ' + key}))
+    res.send(JSON.stringify({ err: 'API key not allowed: ' + key }))
     return
   }
   debug('Allowed offloader request for key:', key)
@@ -179,12 +179,12 @@ app.get('/', (req, res) => res.send(`<style>
       information about all registered nodes. Information about individual nodes is then exposed via a REST interface:
     <ul style='border: 1px dotted grey; border-width: 0 0 1px; padding: 0 0 16px 26px;'>
       ${app._router.stack.filter(x => x.route).map(r => {
-        let route = r.route.path
+        const route = r.route.path
         let href = route
-        let urlVar = route.split(':')[1]
+        const urlVar = route.split(':')[1]
         if (route === '/') return
         if (route.includes(':')) {
-          let item = randomItem(route, urlVar)
+          const item = randomItem(route, urlVar)
           href = href.replace(`:${urlVar}`, item)
         }
         return `<li><a href=${href}>${route}</a></li>`
@@ -196,9 +196,9 @@ app.get('/', (req, res) => res.send(`<style>
 
 function randomItem (route, urlVar) {
   if (Object.keys(state.nodes).length === 0) return urlVar
-  let nodes = state.nodes
-  let ids = Object.keys(nodes)
-  let randomId = ids[ids.length * Math.random() << 0]
+  const nodes = state.nodes
+  const ids = Object.keys(nodes)
+  const randomId = ids[ids.length * Math.random() << 0]
   if (urlVar === 'id') return randomId
   return nodes[ids[ids.length * Math.random() << 0]][urlVar]
 }

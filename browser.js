@@ -1,27 +1,27 @@
-let choo = require('choo')
-let debug = require('debug')('ffs-monitor')
-let devtools = require('choo-devtools')
-let email = require('apostle.io')
-let html = require('choo/html')
-let Nanocomponent = require('nanocomponent')
-let persist = require('choo-persist')
-let Signalhub = require('signalhub')
-let socketIo = require('socket.io-client')
-let Swarm = require('secure-webrtc-swarm')
-let moment = require('moment')
+const choo = require('choo')
+const debug = require('debug')('ffs-monitor')
+const devtools = require('choo-devtools')
+const email = require('apostle.io')
+const html = require('choo/html')
+const Nanocomponent = require('nanocomponent')
+const persist = require('choo-persist')
+const Signalhub = require('signalhub')
+const socketIo = require('socket.io-client')
+const Swarm = require('secure-webrtc-swarm')
+const moment = require('moment')
 
-let restUrl = process.env.REST_URL || 'http://localhost:8888'
-let wsUrl = process.env.WS_URL || restUrl
-let offloaderUrl = process.env.API_URL || restUrl
-let apostleKey = process.env.APOSTLE_KEY || 'd867ceb476158bda34e72c0c5e26c2dde0039d9d'
+const restUrl = process.env.REST_URL || 'http://localhost:8888'
+const wsUrl = process.env.WS_URL || restUrl
+const offloaderUrl = process.env.API_URL || restUrl
+const apostleKey = process.env.APOSTLE_KEY || 'd867ceb476158bda34e72c0c5e26c2dde0039d9d'
 
-let minSearchLengh = 5
-let pollingTime = 1000 * 60 * 15
-let socket = socketIo(wsUrl)
-let storageName = 'ffs-monitor-v' + require('./package.json').version[0]
-let hash = window.location.hash.substr(1)
+const minSearchLengh = 5
+const pollingTime = 1000 * 60 * 15
+const socket = socketIo(wsUrl)
+const storageName = 'ffs-monitor-v' + require('./package.json').version[0]
+const hash = window.location.hash.substr(1)
 
-let app = choo({ href: false })
+const app = choo({ href: false })
 if (process.env.NODE_ENV !== 'production') {
   app.use(devtools())
 }
@@ -40,7 +40,7 @@ app.mount('body')
 function notify (id, state, testMail) {
   debug('Tyring to send notifications')
 
-  let msg = `Node ${state.nodes[id].name} came online!`
+  const msg = `Node ${state.nodes[id].name} came online!`
   new window.Notification('ffs-monitor', { // eslint-disable-line
     body: msg,
     icon: 'assets/ffs-logo-128.png',
@@ -49,10 +49,10 @@ function notify (id, state, testMail) {
 
   if (state.sendEmail || testMail) {
     email.domainKey = apostleKey
-    let node = testMail ? {
+    const node = testMail ? {
       id: 'ec:08:6b:f7:d4:ae',
       name: 'ffs-aleppo-kiefer'
-    } : {id, name: state.nodes[id].name}
+    } : { id, name: state.nodes[id].name }
     email.deliver('node-changes-state', {
       email: state.email.local.address,
       node
@@ -66,8 +66,8 @@ app.use((state, emitter) => {
   window.Notification.requestPermission()
   emitter.on('DOMContentLoaded', x => {
     document.querySelectorAll('input[type=file]')[0].addEventListener('change', e => {
-      let file = e.target.files[0]
-      let reader = new window.FileReader()
+      const file = e.target.files[0]
+      const reader = new window.FileReader()
       reader.onloadend = e => {
         window.localStorage.setItem(storageName, e.target.result)
         window.location.reload()
@@ -79,7 +79,7 @@ app.use((state, emitter) => {
       debug('Starting sharing')
       startSharing(state, emitter)
     }
-    let offloader = state.query['offloader']
+    const offloader = state.query.offloader
     if (offloader) {
       emitter.emit('saveOffloader', offloader)
       emitter.emit('replaceState', '/') // remove query string
@@ -96,11 +96,12 @@ app.use((state, emitter) => {
   emitter.emit('updateAll')
 })
 
-let Input = class Component extends Nanocomponent {
+const Input = class Component extends Nanocomponent {
   constructor () {
     super()
     this.state = {}
   }
+
   createElement (state) {
     this.state = state
     return html`
@@ -108,15 +109,16 @@ let Input = class Component extends Nanocomponent {
       class=form-control type=text placeholder='Name or MAC address' data-toggle=dropdown>
     `
   }
+
   update () {}
 }
-let input = new Input()
+const input = new Input()
 
 function mainView (state, emit) {
   let nodeCount = 0
   let clientCount = 0
   state.ids.reduce((_, id) => {
-    let node = state.nodes[id]
+    const node = state.nodes[id]
     if (!node.flags) return
     nodeCount += +node.flags.online
     clientCount += +node.clientcount
@@ -242,7 +244,7 @@ function mainView (state, emit) {
       <!-- search bar -->
       <header class=row>
         <div class='col input-group dropdown show'>
-          ${input.render({onkeypress: search, onfocus: showSuggestions, onblur: hideSuggestions})}
+          ${input.render({ onkeypress: search, onfocus: showSuggestions, onblur: hideSuggestions })}
 
           <div class=dropdown-menu
             style='
@@ -282,7 +284,7 @@ function mainView (state, emit) {
         <br>
         <ul class=list-group>
           ${state.ids.map((id, i) => {
-            let node = state.nodes[id]
+            const node = state.nodes[id]
             if (!node.flags) return
             return html`<li id=${window.Symbol()}
                 class='list-group-item
@@ -336,19 +338,19 @@ function mainView (state, emit) {
   }
 
   function showSuggestions () {
-    let input = document.querySelectorAll('header input')[0].value
+    const input = document.querySelectorAll('header input')[0].value
     if (input.length >= minSearchLengh) emit('toggleSuggestions', true)
   }
 
   function selected (i) { // put selection into input field
-    let selection = document.querySelectorAll('header .dropdown-menu button')[i].innerHTML
+    const selection = document.querySelectorAll('header .dropdown-menu button')[i].innerHTML
     document.querySelectorAll('header input')[0].value = selection
   }
 
-  function search ({keyCode}) { // google instant style
-    let newInput = String.fromCharCode(keyCode)
-    let previousInput = document.querySelectorAll('header input')[0].value
-    let search = previousInput + newInput
+  function search ({ keyCode }) { // google instant style
+    const newInput = String.fromCharCode(keyCode)
+    const previousInput = document.querySelectorAll('header input')[0].value
+    const search = previousInput + newInput
     if (search.length < minSearchLengh) {
       emit('toggleSuggestions', false)
       return
@@ -363,12 +365,12 @@ function mainView (state, emit) {
   }
   function drop (to, e) {
     e.preventDefault()
-    let from = e.dataTransfer.getData('text')
-    emit('flip', {from, to})
+    const from = e.dataTransfer.getData('text')
+    emit('flip', { from, to })
   }
 
   function add () {
-    let input = document.querySelector('header input').value
+    const input = document.querySelector('header input').value
     socket.emit('getId', input)
     document.querySelector('header input').value = ''
   }
@@ -444,7 +446,7 @@ function uiStore (state, emitter) {
     emitter.emit('render')
   })
   emitter.on('connectOffloader', x => {
-    let headers = new window.Headers()
+    const headers = new window.Headers()
     headers.append('Content-Type', 'application/json')
     window.fetch(offloaderUrl + '/v1/offload', {
       method: 'POST',
@@ -472,14 +474,14 @@ function uiStore (state, emitter) {
 }
 
 function startSharing (state, emitter) {
-  let hub = new Signalhub(
+  const hub = new Signalhub(
     `ffs-monitor-v${require('./package.json').version[0]}`,
     [
       // 'https://signalhub.perguth.de:65300/',
       'http://localhost:7000'
     ] // TODO: Multiple hubs for redundancy
   )
-  let peers = []
+  const peers = []
   let ephemeralKey
   if (hash) {
     if (emitter) {
@@ -488,11 +490,11 @@ function startSharing (state, emitter) {
     }
     ephemeralKey = hash.split('-').pop()
   }
-  let keys = Object.keys(state.keys).map(type => {
+  const keys = Object.keys(state.keys).map(type => {
     if (type === 'offloader') return state.keys[type].wrtc
     return state.keys[type]
   })
-  let swarm = new Swarm(hub, {keys})
+  const swarm = new Swarm(hub, { keys })
   if (ephemeralKey) swarm.keys.push(ephemeralKey)
 
   window.onbeforeunload = x => {
@@ -506,7 +508,7 @@ function startSharing (state, emitter) {
     peers.push(peers)
     if (!hash) {
       debug('Sending data')
-      let data = JSON.parse(window.localStorage.getItem(storageName))
+      const data = JSON.parse(window.localStorage.getItem(storageName))
       if (peer.sharedKey === state.keys.noEmails) {
         debug('Remote should not send emails')
         data.email.local.enabled = false
@@ -548,7 +550,7 @@ function nodeStore (state, emitter) {
   })
 
   emitter.on('update', id => {
-    let url = restUrl + '/v1/id/' + id
+    const url = restUrl + '/v1/id/' + id
     window.fetch(url).then(res => {
       res.json().then(node => {
         state.timestamp = node.timestamp
@@ -568,8 +570,8 @@ function nodeStore (state, emitter) {
     state.ids.forEach(id => emitter.emit('update', id))
   })
 
-  emitter.on('flip', ({from, to}) => {
-    let tmp = state.ids[to]
+  emitter.on('flip', ({ from, to }) => {
+    const tmp = state.ids[to]
     state.ids[to] = state.ids[from]
     state.ids[from] = tmp
     emitter.emit('render')
